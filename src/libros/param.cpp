@@ -25,11 +25,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/param.h"
-#include "ros/master.h"
-#include "ros/xmlrpc_manager.h"
-#include "ros/this_node.h"
-#include "ros/names.h"
+#include "roscpp_multimaster/param.h"
+#include "roscpp_multimaster/master.h"
+#include "roscpp_multimaster/xmlrpc_manager.h"
+#include "roscpp_multimaster/this_node.h"
+#include "roscpp_multimaster/names.h"
 
 #include <ros/console.h>
 

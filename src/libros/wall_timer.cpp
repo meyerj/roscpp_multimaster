@@ -25,8 +25,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/wall_timer.h"
-#include "ros/timer_manager.h"
+#include "roscpp_multimaster/wall_timer.h"
+#include "roscpp_multimaster/timer_manager.h"
 
 namespace ros
 {

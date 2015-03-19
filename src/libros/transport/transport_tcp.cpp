@@ -32,11 +32,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/io.h"
-#include "ros/transport/transport_tcp.h"
-#include "ros/poll_set.h"
+#include "roscpp_multimaster/io.h"
+#include "roscpp_multimaster/transport/transport_tcp.h"
+#include "roscpp_multimaster/poll_set.h"
 #include "ros/header.h"
-#include "ros/file_log.h"
+#include "roscpp_multimaster/file_log.h"
 #include <ros/assert.h>
 #include <sstream>
 #include <boost/bind.hpp>

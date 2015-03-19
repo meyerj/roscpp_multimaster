@@ -32,9 +32,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/connection.h"
-#include "ros/transport/transport.h"
-#include "ros/file_log.h"
+#include "roscpp_multimaster/connection.h"
+#include "roscpp_multimaster/transport/transport.h"
+#include "roscpp_multimaster/file_log.h"
 
 #include <ros/assert.h>
 

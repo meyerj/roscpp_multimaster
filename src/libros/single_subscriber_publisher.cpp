@@ -25,8 +25,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/single_subscriber_publisher.h"
-#include "ros/subscriber_link.h"
+#include "roscpp_multimaster/single_subscriber_publisher.h"
+#include "roscpp_multimaster/subscriber_link.h"
 
 namespace ros
 {

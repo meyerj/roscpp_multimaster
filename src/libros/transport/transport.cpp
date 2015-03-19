@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/transport/transport.h"
+#include "roscpp_multimaster/transport/transport.h"
 #include "ros/console.h"
 #include <netinet/in.h>
 #include <sys/socket.h>

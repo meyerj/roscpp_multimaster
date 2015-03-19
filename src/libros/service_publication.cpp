@@ -32,10 +32,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/service_publication.h"
-#include "ros/service_client_link.h"
-#include "ros/connection.h"
-#include "ros/callback_queue_interface.h"
+#include "roscpp_multimaster/service_publication.h"
+#include "roscpp_multimaster/service_client_link.h"
+#include "roscpp_multimaster/connection.h"
+#include "roscpp_multimaster/callback_queue_interface.h"
 
 #include <boost/bind.hpp>
 

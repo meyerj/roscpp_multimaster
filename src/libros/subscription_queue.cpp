@@ -26,9 +26,9 @@
  */
 
 
-#include "ros/subscription_queue.h"
-#include "ros/message_deserializer.h"
-#include "ros/subscription_callback_helper.h"
+#include "roscpp_multimaster/subscription_queue.h"
+#include "roscpp_multimaster/message_deserializer.h"
+#include "roscpp_multimaster/subscription_callback_helper.h"
 
 namespace ros
 {

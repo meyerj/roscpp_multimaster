@@ -25,23 +25,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/node_handle.h"
-#include "ros/this_node.h"
-#include "ros/service.h"
-#include "ros/callback_queue.h"
-#include "ros/timer_manager.h"
+#include "roscpp_multimaster/node_handle.h"
+#include "roscpp_multimaster/this_node.h"
+#include "roscpp_multimaster/service.h"
+#include "roscpp_multimaster/callback_queue.h"
+#include "roscpp_multimaster/timer_manager.h"
 
 #include "ros/time.h"
 #include "ros/rate.h"
 
-#include "ros/xmlrpc_manager.h"
-#include "ros/topic_manager.h"
-#include "ros/service_manager.h"
-#include "ros/master.h"
-#include "ros/param.h"
-#include "ros/names.h"
-#include "ros/init.h"
-#include "ros/this_node.h"
+#include "roscpp_multimaster/xmlrpc_manager.h"
+#include "roscpp_multimaster/topic_manager.h"
+#include "roscpp_multimaster/service_manager.h"
+#include "roscpp_multimaster/master.h"
+#include "roscpp_multimaster/param.h"
+#include "roscpp_multimaster/names.h"
+#include "roscpp_multimaster/init.h"
+#include "roscpp_multimaster/this_node.h"
 #include "XmlRpc.h"
 
 #include <boost/thread.hpp>

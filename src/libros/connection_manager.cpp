@@ -25,15 +25,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/connection_manager.h"
-#include "ros/poll_manager.h"
-#include "ros/connection.h"
-#include "ros/transport_subscriber_link.h"
-#include "ros/service_client_link.h"
-#include "ros/transport/transport_tcp.h"
-#include "ros/transport/transport_udp.h"
-#include "ros/file_log.h"
-#include "ros/network.h"
+#include "roscpp_multimaster/connection_manager.h"
+#include "roscpp_multimaster/poll_manager.h"
+#include "roscpp_multimaster/connection.h"
+#include "roscpp_multimaster/transport_subscriber_link.h"
+#include "roscpp_multimaster/service_client_link.h"
+#include "roscpp_multimaster/transport/transport_tcp.h"
+#include "roscpp_multimaster/transport/transport_udp.h"
+#include "roscpp_multimaster/file_log.h"
+#include "roscpp_multimaster/network.h"
 
 #include <ros/assert.h>
 

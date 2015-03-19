@@ -32,15 +32,15 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/intraprocess_publisher_link.h"
-#include "ros/intraprocess_subscriber_link.h"
-#include "ros/subscription.h"
+#include "roscpp_multimaster/intraprocess_publisher_link.h"
+#include "roscpp_multimaster/intraprocess_subscriber_link.h"
+#include "roscpp_multimaster/subscription.h"
 #include "ros/header.h"
-#include "ros/connection.h"
-#include "ros/transport/transport.h"
-#include "ros/this_node.h"
-#include "ros/connection_manager.h"
-#include "ros/file_log.h"
+#include "roscpp_multimaster/connection.h"
+#include "roscpp_multimaster/transport/transport.h"
+#include "roscpp_multimaster/this_node.h"
+#include "roscpp_multimaster/connection_manager.h"
+#include "roscpp_multimaster/file_log.h"
 
 #include <boost/bind.hpp>
 

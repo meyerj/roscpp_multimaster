@@ -25,9 +25,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/subscriber.h"
-#include "ros/node_handle.h"
-#include "ros/topic_manager.h"
+#include "roscpp_multimaster/subscriber.h"
+#include "roscpp_multimaster/node_handle.h"
+#include "roscpp_multimaster/topic_manager.h"
 
 namespace ros
 {

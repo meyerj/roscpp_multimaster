@@ -32,9 +32,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/transport/transport_udp.h"
-#include "ros/poll_set.h"
-#include "ros/file_log.h"
+#include "roscpp_multimaster/transport/transport_udp.h"
+#include "roscpp_multimaster/poll_set.h"
+#include "roscpp_multimaster/file_log.h"
 
 #include <ros/assert.h>
 #include <boost/bind.hpp>

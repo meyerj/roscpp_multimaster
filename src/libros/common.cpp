@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/common.h"
+#include "roscpp_multimaster/common.h"
 #include <cstdlib>
 #include <cstdio>
 #include <cerrno>

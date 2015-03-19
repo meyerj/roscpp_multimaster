@@ -25,9 +25,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/names.h"
-#include "ros/this_node.h"
-#include "ros/file_log.h"
+#include "roscpp_multimaster/names.h"
+#include "roscpp_multimaster/this_node.h"
+#include "roscpp_multimaster/file_log.h"
 
 #include <ros/console.h>
 #include <ros/assert.h>

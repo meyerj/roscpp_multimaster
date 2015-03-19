@@ -25,13 +25,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/statistics.h"
-#include "ros/node_handle.h"
+#include "roscpp_multimaster/statistics.h"
+#include "roscpp_multimaster/node_handle.h"
 #include <rosgraph_msgs/TopicStatistics.h>
-#include "ros/this_node.h"
+#include "roscpp_multimaster/this_node.h"
 #include "ros/message_traits.h"
 #include "std_msgs/Header.h"
-#include "ros/param.h"
+#include "roscpp_multimaster/param.h"
 
 namespace ros
 {

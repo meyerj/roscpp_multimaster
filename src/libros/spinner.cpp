@@ -25,9 +25,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/spinner.h"
-#include "ros/ros.h"
-#include "ros/callback_queue.h"
+#include "roscpp_multimaster/spinner.h"
+#include "roscpp_multimaster/ros.h"
+#include "roscpp_multimaster/callback_queue.h"
 
 #include <boost/thread/thread.hpp>
 #include <boost/thread/recursive_mutex.hpp>

@@ -26,10 +26,10 @@
  */
 
 #include <cstdio>
-#include "ros/file_log.h"
-#include "ros/this_node.h"
+#include "roscpp_multimaster/file_log.h"
+#include "roscpp_multimaster/this_node.h"
 
-#include <ros/io.h>
+#include <roscpp_multimaster/io.h>
 #include <ros/console.h>
 
 #include <boost/filesystem.hpp>

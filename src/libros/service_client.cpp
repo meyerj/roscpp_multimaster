@@ -25,11 +25,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/service_client.h"
-#include "ros/service_server_link.h"
-#include "ros/connection.h"
-#include "ros/service_manager.h"
-#include "ros/service.h"
+#include "roscpp_multimaster/service_client.h"
+#include "roscpp_multimaster/service_server_link.h"
+#include "roscpp_multimaster/connection.h"
+#include "roscpp_multimaster/service_manager.h"
+#include "roscpp_multimaster/service.h"
 
 namespace ros
 {

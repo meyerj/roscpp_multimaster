@@ -32,14 +32,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/service_client_link.h"
-#include "ros/service_publication.h"
+#include "roscpp_multimaster/service_client_link.h"
+#include "roscpp_multimaster/service_publication.h"
 #include "ros/header.h"
-#include "ros/connection.h"
-#include "ros/service_manager.h"
-#include "ros/transport/transport.h"
-#include "ros/this_node.h"
-#include "ros/file_log.h"
+#include "roscpp_multimaster/connection.h"
+#include "roscpp_multimaster/service_manager.h"
+#include "roscpp_multimaster/transport/transport.h"
+#include "roscpp_multimaster/this_node.h"
+#include "roscpp_multimaster/file_log.h"
 
 #include <boost/bind.hpp>
 

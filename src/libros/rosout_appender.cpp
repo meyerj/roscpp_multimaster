@@ -32,12 +32,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/rosout_appender.h"
-#include "ros/this_node.h"
-#include "ros/node_handle.h"
-#include "ros/topic_manager.h"
-#include "ros/advertise_options.h"
-#include "ros/names.h"
+#include "roscpp_multimaster/rosout_appender.h"
+#include "roscpp_multimaster/this_node.h"
+#include "roscpp_multimaster/node_handle.h"
+#include "roscpp_multimaster/topic_manager.h"
+#include "roscpp_multimaster/advertise_options.h"
+#include "roscpp_multimaster/names.h"
 
 #include <rosgraph_msgs/Log.h>
 

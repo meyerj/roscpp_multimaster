@@ -26,8 +26,8 @@
  */
 
 
-#include "ros/message_deserializer.h"
-#include "ros/subscription_callback_helper.h"
+#include "roscpp_multimaster/message_deserializer.h"
+#include "roscpp_multimaster/subscription_callback_helper.h"
 #include <ros/console.h>
 
 namespace ros

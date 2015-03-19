@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/topic.h"
-#include "ros/callback_queue.h"
+#include "roscpp_multimaster/topic.h"
+#include "roscpp_multimaster/callback_queue.h"
 
 namespace ros
 {

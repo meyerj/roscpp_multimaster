@@ -26,10 +26,10 @@
  */
 
 #include <cstdio>
-#include "ros/this_node.h"
-#include "ros/names.h"
-#include "ros/topic_manager.h"
-#include "ros/init.h"
+#include "roscpp_multimaster/this_node.h"
+#include "roscpp_multimaster/names.h"
+#include "roscpp_multimaster/topic_manager.h"
+#include "roscpp_multimaster/init.h"
 
 #ifdef _MSC_VER
   #ifdef snprintf

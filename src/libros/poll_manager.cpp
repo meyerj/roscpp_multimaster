@@ -25,8 +25,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/poll_manager.h"
-#include "ros/common.h"
+#include "roscpp_multimaster/poll_manager.h"
+#include "roscpp_multimaster/common.h"
 
 #include <signal.h>
 

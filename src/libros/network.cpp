@@ -26,10 +26,10 @@
  */
 
 #include "config.h"
-#include "ros/network.h"
-#include "ros/file_log.h"
-#include "ros/exceptions.h"
-#include "ros/io.h"     // cross-platform headers needed
+#include "roscpp_multimaster/network.h"
+#include "roscpp_multimaster/file_log.h"
+#include "roscpp_multimaster/exceptions.h"
+#include "roscpp_multimaster/io.h"     // cross-platform headers needed
 #include <ros/console.h>
 #include <ros/assert.h>
 #ifdef HAVE_IFADDRS_H

@@ -25,9 +25,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/service_server.h"
-#include "ros/node_handle.h"
-#include "ros/service_manager.h"
+#include "roscpp_multimaster/service_server.h"
+#include "roscpp_multimaster/node_handle.h"
+#include "roscpp_multimaster/service_manager.h"
 
 namespace ros
 {

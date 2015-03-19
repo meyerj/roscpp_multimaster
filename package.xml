@@ -1,5 +1,5 @@
 <package>
-  <name>roscpp</name>
+  <name>roscpp_multimaster</name>
   <version>1.11.10</version>
   <description>
     roscpp is a C++ implementation of ROS. It provides
@@ -12,7 +12,7 @@
     roscpp is the most widely used ROS client library and is designed to
     be the high-performance library for ROS.
   </description>
-  <maintainer email="dthomas@osrfoundation.org">Dirk Thomas</maintainer>
+  <maintainer email="johannes@intermodalics.eu">Johannes Meyer</maintainer>
   <license>BSD</license>
 
   <url>http://ros.org/wiki/roscpp</url>
@@ -20,6 +20,7 @@
   <author>Josh Faust</author>
   <author>Brian Gerkey</author>
   <author>Troy Straszheim</author>
+  <author>Johannes Meyer</author>
 
   <buildtool_depend version_gte="0.5.78">catkin</buildtool_depend>
 

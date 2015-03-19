@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(roscpp)
+project(roscpp_multimaster)
 
 find_package(catkin REQUIRED COMPONENTS
   cpp_common message_generation rosconsole roscpp_serialization roscpp_traits rosgraph_msgs rostime std_msgs xmlrpcpp
@@ -7,20 +7,20 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package_xml()
 # split version in parts and pass to extra file
-string(REPLACE "." ";" roscpp_VERSION_LIST "${roscpp_VERSION}")
-list(LENGTH roscpp_VERSION_LIST _count)
+string(REPLACE "." ";" ${PROJECT_NAME}_VERSION_LIST "${${PROJECT_NAME}_VERSION}")
+list(LENGTH ${PROJECT_NAME}_VERSION_LIST _count)
 if(NOT _count EQUAL 3)
-  message(FATAL_ERROR "roscpp version '${roscpp_VERSION}' does not match 'MAJOR.MINOR.PATCH' pattern")
+  message(FATAL_ERROR "${PROJECT_NAME} version '${${PROJECT_NAME}_VERSION}' does not match 'MAJOR.MINOR.PATCH' pattern")
 endif()
-list(GET roscpp_VERSION_LIST 0 roscpp_VERSION_MAJOR)
-list(GET roscpp_VERSION_LIST 1 roscpp_VERSION_MINOR)
-list(GET roscpp_VERSION_LIST 2 roscpp_VERSION_PATCH)
+list(GET ${PROJECT_NAME}_VERSION_LIST 0 ${PROJECT_NAME}_VERSION_MAJOR)
+list(GET ${PROJECT_NAME}_VERSION_LIST 1 ${PROJECT_NAME}_VERSION_MINOR)
+list(GET ${PROJECT_NAME}_VERSION_LIST 2 ${PROJECT_NAME}_VERSION_PATCH)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/ros/common.h.in ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_INCLUDE_DESTINATION}/ros/common.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/common.h.in ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION}/common.h)
 
 find_package(Boost REQUIRED COMPONENTS signals filesystem system)
 
-include_directories(include ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_INCLUDE_DESTINATION}/ros ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+include_directories(include ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION} ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 add_message_files(
   DIRECTORY msg
@@ -48,8 +48,8 @@ if(CMAKE_THREAD_LIBS_INIT)
 endif()
 
 catkin_package(
-  INCLUDE_DIRS include ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_INCLUDE_DESTINATION}/ros
-  LIBRARIES roscpp ${PTHREAD_LIB}
+  INCLUDE_DIRS include #${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  LIBRARIES ${PROJECT_NAME} ${PTHREAD_LIB}
   CATKIN_DEPENDS cpp_common message_runtime rosconsole roscpp_serialization roscpp_traits rosgraph_msgs rostime std_msgs xmlrpcpp
   DEPENDS Boost
 )
@@ -66,7 +66,7 @@ CHECK_FUNCTION_EXISTS(trunc HAVE_TRUNC)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/libros/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-add_library(roscpp 
+add_library(${PROJECT_NAME}
   src/libros/master.cpp
   src/libros/network.cpp
   src/libros/subscriber.cpp
@@ -116,23 +116,23 @@ add_library(roscpp
   src/libros/this_node.cpp
   )
 
-add_dependencies(roscpp roscpp_gencpp rosgraph_msgs_gencpp std_msgs_gencpp)
+add_dependencies(${PROJECT_NAME} roscpp_gencpp rosgraph_msgs_gencpp std_msgs_gencpp)
 
-target_link_libraries(roscpp
+target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
   )
 
 #explicitly install library and includes
-install(TARGETS roscpp
+install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
-install(DIRECTORY include/
-  DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h")
-install(FILES ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_INCLUDE_DESTINATION}/ros/common.h
-  DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}/ros)
+install(FILES ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION}/common.h
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 # install legacy infrastructure needed by rosbuild
 install(FILES rosbuild/roscpp.cmake
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rosbuild)

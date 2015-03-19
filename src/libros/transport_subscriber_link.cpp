@@ -26,15 +26,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/transport_subscriber_link.h"
-#include "ros/publication.h"
+#include "roscpp_multimaster/transport_subscriber_link.h"
+#include "roscpp_multimaster/publication.h"
 #include "ros/header.h"
-#include "ros/connection.h"
-#include "ros/transport/transport.h"
-#include "ros/this_node.h"
-#include "ros/connection_manager.h"
-#include "ros/topic_manager.h"
-#include "ros/file_log.h"
+#include "roscpp_multimaster/connection.h"
+#include "roscpp_multimaster/transport/transport.h"
+#include "roscpp_multimaster/this_node.h"
+#include "roscpp_multimaster/connection_manager.h"
+#include "roscpp_multimaster/topic_manager.h"
+#include "roscpp_multimaster/file_log.h"
 
 #include <boost/bind.hpp>
 

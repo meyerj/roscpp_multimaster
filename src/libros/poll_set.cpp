@@ -32,10 +32,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/poll_set.h"
-#include "ros/file_log.h"
+#include "roscpp_multimaster/poll_set.h"
+#include "roscpp_multimaster/file_log.h"
 
-#include "ros/transport/transport.h"
+#include "roscpp_multimaster/transport/transport.h"
 
 #include <ros/assert.h>
 

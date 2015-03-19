@@ -25,13 +25,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/xmlrpc_manager.h"
-#include "ros/network.h"
-#include "ros/param.h"
+#include "roscpp_multimaster/xmlrpc_manager.h"
+#include "roscpp_multimaster/network.h"
+#include "roscpp_multimaster/param.h"
 #include "ros/assert.h"
-#include "ros/common.h"
-#include "ros/file_log.h"
-#include "ros/io.h"
+#include "roscpp_multimaster/common.h"
+#include "roscpp_multimaster/file_log.h"
+#include "roscpp_multimaster/io.h"
 
 using namespace XmlRpc;
 

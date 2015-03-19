@@ -34,19 +34,19 @@
 
 #include <ros/platform.h>  // platform dependendant requirements
 
-#include "ros/transport_publisher_link.h"
-#include "ros/subscription.h"
+#include "roscpp_multimaster/transport_publisher_link.h"
+#include "roscpp_multimaster/subscription.h"
 #include "ros/header.h"
-#include "ros/connection.h"
-#include "ros/transport/transport.h"
-#include "ros/this_node.h"
-#include "ros/connection_manager.h"
-#include "ros/file_log.h"
-#include "ros/poll_manager.h"
-#include "ros/transport/transport_tcp.h"
-#include "ros/timer_manager.h"
-#include "ros/callback_queue.h"
-#include "ros/internal_timer_manager.h"
+#include "roscpp_multimaster/connection.h"
+#include "roscpp_multimaster/transport/transport.h"
+#include "roscpp_multimaster/this_node.h"
+#include "roscpp_multimaster/connection_manager.h"
+#include "roscpp_multimaster/file_log.h"
+#include "roscpp_multimaster/poll_manager.h"
+#include "roscpp_multimaster/transport/transport_tcp.h"
+#include "roscpp_multimaster/timer_manager.h"
+#include "roscpp_multimaster/callback_queue.h"
+#include "roscpp_multimaster/internal_timer_manager.h"
 
 #include <boost/bind.hpp>
 

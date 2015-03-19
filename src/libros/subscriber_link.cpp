@@ -25,8 +25,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/subscriber_link.h"
-#include "ros/publication.h"
+#include "roscpp_multimaster/subscriber_link.h"
+#include "roscpp_multimaster/publication.h"
 
 #include <boost/bind.hpp>
 

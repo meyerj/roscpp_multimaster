@@ -25,10 +25,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/publisher.h"
-#include "ros/publication.h"
-#include "ros/node_handle.h"
-#include "ros/topic_manager.h"
+#include "roscpp_multimaster/publisher.h"
+#include "roscpp_multimaster/publication.h"
+#include "roscpp_multimaster/node_handle.h"
+#include "roscpp_multimaster/topic_manager.h"
 
 namespace ros
 {

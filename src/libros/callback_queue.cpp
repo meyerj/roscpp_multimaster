@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/callback_queue.h"
+#include "roscpp_multimaster/callback_queue.h"
 #include "ros/assert.h"
 
 namespace ros
