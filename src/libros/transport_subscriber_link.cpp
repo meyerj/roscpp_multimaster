@@ -41,9 +41,10 @@
 namespace ros
 {
 
-TransportSubscriberLink::TransportSubscriberLink()
+TransportSubscriberLink::TransportSubscriberLink(const TopicManagerPtr& topic_manager)
 : writing_message_(false)
 , header_written_(false)
+, topic_manager_(topic_manager)
 , queue_full_(false)
 {
 
@@ -78,7 +79,7 @@ bool TransportSubscriberLink::handleHeader(const Header& header)
   // This will get validated by validateHeader below
   std::string client_callerid;
   header.getValue("callerid", client_callerid);
-  PublicationPtr pt = TopicManager::instance()->lookupPublication(topic);
+  PublicationPtr pt = topic_manager_.lock()->lookupPublication(topic);
   if (!pt)
   {
     std::string msg = std::string("received a connection for a nonexistent topic [") +
@@ -100,7 +101,7 @@ bool TransportSubscriberLink::handleHeader(const Header& header)
   }
 
   destination_caller_id_ = client_callerid;
-  connection_id_ = ConnectionManager::instance()->getNewConnectionID();
+  connection_id_ = ConnectionManager::getNewConnectionID();
   topic_ = pt->getName();
   parent_ = PublicationWPtr(pt);
 

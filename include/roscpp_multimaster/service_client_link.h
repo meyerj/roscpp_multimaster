@@ -52,7 +52,7 @@ typedef boost::shared_ptr<Connection> ConnectionPtr;
 class ROSCPP_DECL ServiceClientLink : public boost::enable_shared_from_this<ServiceClientLink>
 {
 public:
-  ServiceClientLink();
+  ServiceClientLink(const ServiceManagerPtr& service_manager);
   virtual ~ServiceClientLink();
 
   //
@@ -77,6 +77,7 @@ private:
   void onResponseWritten(const ConnectionPtr& conn);
 
   ConnectionPtr connection_;
+  ServiceManagerWPtr service_manager_;
   ServicePublicationWPtr parent_;
   bool persistent_;
   boost::signals2::connection dropped_conn_;

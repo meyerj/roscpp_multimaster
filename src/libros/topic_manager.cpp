@@ -53,24 +53,9 @@ using namespace std; // sigh
 namespace ros
 {
 
-TopicManagerPtr g_topic_manager;
-boost::mutex g_topic_manager_mutex;
-const TopicManagerPtr& TopicManager::instance()
-{
-  if (!g_topic_manager)
-  {
-    boost::mutex::scoped_lock lock(g_topic_manager_mutex);
-    if (!g_topic_manager)
-    {
-      g_topic_manager.reset(new TopicManager);
-    }
-  }
-
-  return g_topic_manager;
-}
-
-TopicManager::TopicManager()
-: shutting_down_(false)
+TopicManager::TopicManager(const MasterPtr& master)
+: master_(master)
+, shutting_down_(false)
 {
 }
 
@@ -85,8 +70,8 @@ void TopicManager::start()
   shutting_down_ = false;
 
   poll_manager_ = PollManager::instance();
-  connection_manager_ = ConnectionManager::instance();
-  xmlrpc_manager_ = XMLRPCManager::instance();
+  connection_manager_ = master_.lock()->connectionManager();
+  xmlrpc_manager_ = master_.lock()->xmlRpcManager();
 
   xmlrpc_manager_->bind("publisherUpdate", boost::bind(&TopicManager::pubUpdateCallback, this, _1, _2));
   xmlrpc_manager_->bind("requestTopic", boost::bind(&TopicManager::requestTopicCallback, this, _1, _2));
@@ -281,7 +266,7 @@ bool TopicManager::subscribe(const SubscribeOptions& ops)
   const std::string& md5sum = ops.md5sum;
   std::string datatype = ops.datatype;
 
-  SubscriptionPtr s(new Subscription(ops.topic, md5sum, datatype, ops.transport_hints));
+  SubscriptionPtr s(new Subscription(xmlrpc_manager_, connection_manager_, ops.topic, md5sum, datatype, ops.transport_hints));
   s->addCallback(ops.helper, ops.md5sum, ops.callback_queue, ops.queue_size, ops.tracked_object, ops.allow_concurrent_callbacks);
 
   if (!registerSubscriber(s, ops.datatype))
@@ -400,7 +385,7 @@ bool TopicManager::advertise(const AdvertiseOptions& ops, const SubscriberCallba
   args[1] = ops.topic;
   args[2] = ops.datatype;
   args[3] = xmlrpc_manager_->getServerURI();
-  master::execute("registerPublisher", args, result, payload, true);
+  master_.lock()->execute("registerPublisher", args, result, payload, true);
 
   return true;
 }
@@ -460,7 +445,7 @@ bool TopicManager::unregisterPublisher(const std::string& topic)
   args[0] = this_node::getName();
   args[1] = topic;
   args[2] = xmlrpc_manager_->getServerURI();
-  master::execute("unregisterPublisher", args, result, payload, false);
+  master_.lock()->execute("unregisterPublisher", args, result, payload, false);
 
   return true;
 }
@@ -486,7 +471,7 @@ bool TopicManager::registerSubscriber(const SubscriptionPtr& s, const string &da
   args[2] = datatype;
   args[3] = xmlrpc_manager_->getServerURI();
 
-  if (!master::execute("registerSubscriber", args, result, payload, true))
+  if (!master_.lock()->execute("registerSubscriber", args, result, payload, true))
   {
     return false;
   }
@@ -548,7 +533,7 @@ bool TopicManager::unregisterSubscriber(const string &topic)
   args[1] = topic;
   args[2] = xmlrpc_manager_->getServerURI();
 
-  master::execute("unregisterSubscriber", args, result, payload, false);
+  master_.lock()->execute("unregisterSubscriber", args, result, payload, false);
 
   return true;
 }

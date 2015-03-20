@@ -52,6 +52,7 @@
 #include "roscpp_multimaster/this_node.h"
 #include "roscpp_multimaster/network.h"
 #include "roscpp_multimaster/poll_manager.h"
+#include "roscpp_multimaster/topic_manager.h"
 #include "roscpp_multimaster/connection_manager.h"
 #include "roscpp_multimaster/message_deserializer.h"
 #include "roscpp_multimaster/subscription_queue.h"
@@ -66,8 +67,10 @@ using XmlRpc::XmlRpcValue;
 namespace ros
 {
 
-Subscription::Subscription(const std::string &name, const std::string& md5sum, const std::string& datatype, const TransportHints& transport_hints)
-: name_(name)
+Subscription::Subscription(const XMLRPCManagerPtr& xmlrpc_manager, const ConnectionManagerPtr& connection_manager, const std::string &name, const std::string& md5sum, const std::string& datatype, const TransportHints& transport_hints)
+: xmlrpc_manager_(xmlrpc_manager)
+, connection_manager_(connection_manager)
+, name_(name)
 , md5sum_(md5sum)
 , datatype_(datatype)
 , nonconst_callbacks_(0)
@@ -185,7 +188,7 @@ void Subscription::addLocalConnection(const PublicationPtr& pub)
 
   ROSCPP_LOG_DEBUG("Creating intraprocess link for topic [%s]", name_.c_str());
 
-  IntraProcessPublisherLinkPtr pub_link(new IntraProcessPublisherLink(shared_from_this(), XMLRPCManager::instance()->getServerURI(), transport_hints_));
+  IntraProcessPublisherLinkPtr pub_link(new IntraProcessPublisherLink(shared_from_this(), xmlrpc_manager_.lock()->getServerURI(), transport_hints_));
   IntraProcessSubscriberLinkPtr sub_link(new IntraProcessSubscriberLink(pub));
   pub_link->setPublisher(sub_link);
   sub_link->setSubscriber(pub_link);
@@ -307,7 +310,7 @@ bool Subscription::pubUpdate(const V_string& new_pubs)
   for (V_PublisherLink::iterator i = subtractions.begin(); i != subtractions.end(); ++i)
   {
 	const PublisherLinkPtr& link = *i;
-    if (link->getPublisherXMLRPCURI() != XMLRPCManager::instance()->getServerURI())
+    if (link->getPublisherXMLRPCURI() != xmlrpc_manager_.lock()->getServerURI())
     {
       ROSCPP_LOG_DEBUG("Disconnecting from publisher [%s] of topic [%s] at [%s]",
                         link->getCallerID().c_str(), name_.c_str(), link->getPublisherXMLRPCURI().c_str());
@@ -323,13 +326,13 @@ bool Subscription::pubUpdate(const V_string& new_pubs)
             i != additions.end(); ++i)
   {
     // this function should never negotiate a self-subscription
-    if (XMLRPCManager::instance()->getServerURI() != *i)
+    if (xmlrpc_manager_.lock()->getServerURI() != *i)
     {
       retval &= negotiateConnection(*i);
     }
     else
     {
-      ROSCPP_LOG_DEBUG("Skipping myself (%s, %s)", name_.c_str(), XMLRPCManager::instance()->getServerURI().c_str());
+      ROSCPP_LOG_DEBUG("Skipping myself (%s, %s)", name_.c_str(), xmlrpc_manager_.lock()->getServerURI().c_str());
     }
   }
 
@@ -421,7 +424,7 @@ bool Subscription::negotiateConnection(const std::string& xmlrpc_uri)
   // destruction.
   PendingConnectionPtr conn(new PendingConnection(c, udp_transport, shared_from_this(), xmlrpc_uri));
 
-  XMLRPCManager::instance()->addASyncConnection(conn);
+  xmlrpc_manager_.lock()->addASyncConnection(conn);
   // Put this connection on the list that we'll look at later.
   {
     boost::mutex::scoped_lock pending_connections_lock(pending_connections_mutex_);
@@ -462,7 +465,7 @@ void Subscription::pendingConnectionDone(const PendingConnectionPtr& conn, XmlRp
   udp_transport = conn->getUDPTransport();
 
   XmlRpc::XmlRpcValue proto;
-  if(!XMLRPCManager::instance()->validateXmlrpcResponse("requestTopic", result, proto))
+  if(!xmlrpc_manager_.lock()->validateXmlrpcResponse("requestTopic", result, proto))
   {
   	ROSCPP_LOG_DEBUG("Failed to contact publisher [%s:%d] for topic [%s]",
               peer_host.c_str(), peer_port, name_.c_str());
@@ -509,12 +512,12 @@ void Subscription::pendingConnectionDone(const PendingConnectionPtr& conn, XmlRp
     if (transport->connect(pub_host, pub_port))
     {
       ConnectionPtr connection(new Connection());
-      TransportPublisherLinkPtr pub_link(new TransportPublisherLink(shared_from_this(), xmlrpc_uri, transport_hints_));
+      TransportPublisherLinkPtr pub_link(new TransportPublisherLink(connection_manager_.lock(), shared_from_this(), xmlrpc_uri, transport_hints_));
 
       connection->initialize(transport, false, HeaderReceivedFunc());
       pub_link->initialize(connection);
 
-      ConnectionManager::instance()->addConnection(connection);
+      connection_manager_.lock()->addConnection(connection);
 
       boost::mutex::scoped_lock lock(publisher_links_mutex_);
       addPublisherLink(pub_link);
@@ -565,7 +568,7 @@ void Subscription::pendingConnectionDone(const PendingConnectionPtr& conn, XmlRp
       return;
     }
 
-    TransportPublisherLinkPtr pub_link(new TransportPublisherLink(shared_from_this(), xmlrpc_uri, transport_hints_));
+    TransportPublisherLinkPtr pub_link(new TransportPublisherLink(connection_manager_.lock(), shared_from_this(), xmlrpc_uri, transport_hints_));
     if (pub_link->setHeader(h))
     {
       ConnectionPtr connection(new Connection());
@@ -573,7 +576,7 @@ void Subscription::pendingConnectionDone(const PendingConnectionPtr& conn, XmlRp
       connection->setHeader(h);
       pub_link->initialize(connection);
 
-      ConnectionManager::instance()->addConnection(connection);
+      connection_manager_.lock()->addConnection(connection);
 
       boost::mutex::scoped_lock lock(publisher_links_mutex_);
       addPublisherLink(pub_link);

@@ -65,7 +65,7 @@ typedef boost::shared_ptr<SubscriptionCallbackHelper> SubscriptionCallbackHelper
 class ROSCPP_DECL Subscription : public boost::enable_shared_from_this<Subscription>
 {
 public:
-  Subscription(const std::string &name, const std::string& md5sum, const std::string& datatype, const TransportHints& transport_hints);
+  Subscription(const XMLRPCManagerPtr& xmlrpc_manager, const ConnectionManagerPtr& connection_manager, const std::string &name, const std::string& md5sum, const std::string& datatype, const TransportHints& transport_hints);
   virtual ~Subscription();
 
   /**
@@ -203,6 +203,9 @@ private:
   };
   typedef boost::shared_ptr<CallbackInfo> CallbackInfoPtr;
   typedef std::vector<CallbackInfoPtr> V_CallbackInfo;
+
+  XMLRPCManagerWPtr xmlrpc_manager_;
+  ConnectionManagerWPtr connection_manager_;
 
   std::string name_;
   boost::mutex md5sum_mutex_;

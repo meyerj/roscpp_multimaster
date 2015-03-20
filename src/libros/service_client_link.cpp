@@ -46,8 +46,9 @@
 namespace ros
 {
 
-ServiceClientLink::ServiceClientLink()
-: persistent_(false)
+ServiceClientLink::ServiceClientLink(const ServiceManagerPtr& service_manager)
+: service_manager_(service_manager)
+, persistent_(false)
 {
 }
 
@@ -100,7 +101,7 @@ bool ServiceClientLink::handleHeader(const Header& header)
   }
 
   ROSCPP_LOG_DEBUG("Service client [%s] wants service [%s] with md5sum [%s]", client_callerid.c_str(), service.c_str(), md5sum.c_str());
-  ServicePublicationPtr ss = ServiceManager::instance()->lookupServicePublication(service);
+  ServicePublicationPtr ss = service_manager_.lock()->lookupServicePublication(service);
   if (!ss)
   {
     std::string msg = std::string("received a tcpros connection for a "

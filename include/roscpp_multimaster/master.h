@@ -32,6 +32,10 @@
 #include "XmlRpcValue.h"
 #include "roscpp_multimaster/common.h"
 
+#include <boost/thread/mutex.hpp>
+
+#include <boost/enable_shared_from_this.hpp>
+
 namespace ros
 {
 
@@ -124,6 +128,111 @@ ROSCPP_DECL bool getNodes(V_string& nodes);
 ROSCPP_DECL void setRetryTimeout(ros::WallDuration timeout);
 
 } // namespace master
+
+class ROSCPP_DECL Master : public boost::enable_shared_from_this<Master> {
+public:
+  static const MasterPtr& instance(const std::string &uri = std::string());
+
+  Master(const std::string &uri = std::string());
+  ~Master();
+
+  void init(const M_string& remappings);
+
+  void start();
+  void shutdown();
+
+  /** @brief Execute an XMLRPC call on the master
+   *
+   * @param method The RPC method to invoke
+   * @param request The arguments to the RPC call
+   * @param response [out] The resonse that was received.
+   * @param payload [out] The payload that was received.
+   * @param wait_for_master Whether or not this call should loop until it can contact the master
+   *
+   * @return true if call succeeds, false otherwise.
+   */
+  bool execute(const std::string& method, const XmlRpc::XmlRpcValue& request, XmlRpc::XmlRpcValue& response, XmlRpc::XmlRpcValue& payload, bool wait_for_master);
+
+  /** @brief Get the hostname where the master runs.
+   *
+   * @return The master's hostname, as a string
+   */
+  const std::string& getHost();
+
+  /** @brief Get the port where the master runs.
+   *
+   * @return The master's port.
+   */
+  uint32_t getPort();
+
+  /**
+   * \brief Get the full URI to the master (eg. http://host:port/)
+   */
+  const std::string& getURI();
+
+  /** @brief Check whether the master is up
+   *
+   * This method tries to contact the master.  You can call it any time
+   * after ros::init has been called.  The intended usage is to check
+   * whether the master is up before trying to make other requests
+   * (subscriptions, advertisements, etc.).
+   *
+   * @returns true if the master is available, false otherwise.
+   */
+  bool check();
+
+  /** @brief Get the list of topics that are being published by all nodes.
+   *
+   * This method communicates with the master to retrieve the list of all
+   * currently advertised topics.
+   *
+   * @param topics A place to store the resulting list.  Each item in the
+   * list is a pair <string topic, string type>.  The type is represented
+   * in the format "package_name/MessageName", and is also retrievable
+   * through message.__getDataType() or MessageName::__s_getDataType().
+   *
+   * @return true on success, false otherwise (topics not filled in)
+   */
+  bool getTopics(master::V_TopicInfo& topics);
+
+  /**
+   * \brief Retreives the currently-known list of nodes from the master
+   */
+  bool getNodes(V_string& nodes);
+
+  /**
+   * @brief Set the max time this node should spend looping trying to connect to the master
+   * @param The timeout.  A negative value means infinite
+   */
+  void setRetryTimeout(ros::WallDuration timeout);
+
+  const TopicManagerPtr& topicManager();
+  const ServiceManagerPtr& serviceManager();
+  const ParametersPtr& parameters();
+  const ConnectionManagerPtr& connectionManager();
+  const XMLRPCManagerPtr& xmlRpcManager();
+
+private:
+  uint32_t port_;
+  std::string host_;
+  std::string uri_;
+  ros::WallDuration retry_timeout_;
+
+  boost::mutex topic_manager_mutex_;
+  TopicManagerPtr topic_manager_;
+  boost::mutex service_manager_mutex_;
+  ServiceManagerPtr service_manager_;
+  boost::mutex connection_manager_mutex_;
+  ConnectionManagerPtr connection_manager_;
+  boost::mutex xmlrpc_manager_mutex_;
+  XMLRPCManagerPtr xmlrpc_manager_;
+  boost::mutex parameters_mutex_;
+  ParametersPtr parameters_;
+
+#if defined(__APPLE__)
+  boost::mutex xmlrpc_call_mutex_;
+#endif
+};
 
 } // namespace ros
 

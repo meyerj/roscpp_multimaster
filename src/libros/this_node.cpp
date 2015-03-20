@@ -30,6 +30,7 @@
 #include "roscpp_multimaster/names.h"
 #include "roscpp_multimaster/topic_manager.h"
 #include "roscpp_multimaster/init.h"
+#include "roscpp_multimaster/master.h"
 
 #ifdef _MSC_VER
   #ifdef snprintf
@@ -64,12 +65,12 @@ const std::string& getNamespace()
 
 void getAdvertisedTopics(V_string& topics)
 {
-  TopicManager::instance()->getAdvertisedTopics(topics);
+  Master::instance()->topicManager()->getAdvertisedTopics(topics);
 }
 
 void getSubscribedTopics(V_string& topics)
 {
-  TopicManager::instance()->getSubscribedTopics(topics);
+  Master::instance()->topicManager()->getSubscribedTopics(topics);
 }
 
 void init(const std::string& name, const M_string& remappings, uint32_t options)

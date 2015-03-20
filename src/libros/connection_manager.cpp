@@ -34,30 +34,15 @@
 #include "roscpp_multimaster/transport/transport_udp.h"
 #include "roscpp_multimaster/file_log.h"
 #include "roscpp_multimaster/network.h"
+#include "roscpp_multimaster/master.h"
 
 #include <ros/assert.h>
 
 namespace ros
 {
 
-ConnectionManagerPtr g_connection_manager;
-boost::mutex g_connection_manager_mutex;
-const ConnectionManagerPtr& ConnectionManager::instance()
-{
-  if (!g_connection_manager)
-  {
-    boost::mutex::scoped_lock lock(g_connection_manager_mutex);
-    if (!g_connection_manager)
-    {
-      g_connection_manager.reset(new ConnectionManager);
-    }
-  }
-
-  return g_connection_manager;
-}
-
-ConnectionManager::ConnectionManager()
-: connection_id_counter_(0)
+ConnectionManager::ConnectionManager(const MasterPtr& master)
+: master_(master)
 {
 }
 
@@ -140,10 +125,13 @@ uint32_t ConnectionManager::getUDPPort()
   return udpserver_transport_->getServerPort();
 }
 
+uint32_t ConnectionManager::s_connection_id_counter = 0;
+boost::mutex ConnectionManager::s_connection_id_counter_mutex;
+
 uint32_t ConnectionManager::getNewConnectionID()
 {
-  boost::mutex::scoped_lock lock(connection_id_counter_mutex_);
-  uint32_t ret = connection_id_counter_++;
+  boost::mutex::scoped_lock lock(s_connection_id_counter_mutex);
+  uint32_t ret = s_connection_id_counter++;
   return ret;
 }
 
@@ -212,7 +200,7 @@ bool ConnectionManager::onConnectionHeaderReceived(const ConnectionPtr& conn, co
     ROSCPP_LOG_DEBUG("Connection: Creating TransportSubscriberLink for topic [%s] connected to [%s]", 
 		     val.c_str(), conn->getRemoteString().c_str());
 
-    TransportSubscriberLinkPtr sub_link(new TransportSubscriberLink());
+    TransportSubscriberLinkPtr sub_link(new TransportSubscriberLink(master_.lock()->topicManager()));
     sub_link->initialize(conn);
     ret = sub_link->handleHeader(header);
   }
@@ -221,7 +209,7 @@ bool ConnectionManager::onConnectionHeaderReceived(const ConnectionPtr& conn, co
     ROSCPP_LOG_DEBUG("Connection: Creating ServiceClientLink for service [%s] connected to [%s]", 
 		     val.c_str(), conn->getRemoteString().c_str());
 
-    ServiceClientLinkPtr link(new ServiceClientLink());
+    ServiceClientLinkPtr link(new ServiceClientLink(master_.lock()->serviceManager()));
     link->initialize(conn);
     ret = link->handleHeader(header);
   }

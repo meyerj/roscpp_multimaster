@@ -43,6 +43,7 @@ class ROSCPP_DECL ServiceClient
 {
 public:
   ServiceClient() {}
+  ServiceClient(const ServiceManagerPtr& service_manager, const std::string& service_name, bool persistent, const M_string& header_values, const std::string& service_md5sum);
   ServiceClient(const std::string& service_name, bool persistent, const M_string& header_values, const std::string& service_md5sum);
   ServiceClient(const ServiceClient& rhs);
   ~ServiceClient();
@@ -193,6 +194,7 @@ private:
     void shutdown();
     bool isValid() const;
 
+    ServiceManagerPtr service_manager_;
     ServiceServerLinkPtr server_link_;
     std::string name_;
     bool persistent_;

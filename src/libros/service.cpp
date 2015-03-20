@@ -34,6 +34,7 @@
 #include "roscpp_multimaster/init.h"
 #include "roscpp_multimaster/names.h"
 #include "roscpp_multimaster/this_node.h"
+#include "roscpp_multimaster/master.h"
 #include "ros/header.h"
 
 using namespace ros;
@@ -45,7 +46,7 @@ bool service::exists(const std::string& service_name, bool print_failure_reason)
   std::string host;
   uint32_t port;
 
-  if (ServiceManager::instance()->lookupService(mapped_name, host, port))
+  if (Master::instance()->serviceManager()->lookupService(mapped_name, host, port))
   {
     TransportTCPPtr transport(new TransportTCP(0, TransportTCP::SYNCHRONOUS));
 

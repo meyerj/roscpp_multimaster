@@ -41,7 +41,7 @@ namespace ros
 class ROSCPP_DECL TransportSubscriberLink : public SubscriberLink
 {
 public:
-  TransportSubscriberLink();
+  TransportSubscriberLink(const TopicManagerPtr& topic_manager);
   virtual ~TransportSubscriberLink();
 
   //
@@ -64,6 +64,8 @@ private:
 
   bool writing_message_;
   bool header_written_;
+
+  TopicManagerWPtr topic_manager_;
 
   ConnectionPtr connection_;
   boost::signals2::connection dropped_conn_;

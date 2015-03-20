@@ -88,7 +88,7 @@ bool PublisherLink::setHeader(const Header& header)
     }
   }
 
-  connection_id_ = ConnectionManager::instance()->getNewConnectionID();
+  connection_id_ = ConnectionManager::getNewConnectionID();
   header_ = header;
 
   if (SubscriptionPtr parent = parent_.lock())

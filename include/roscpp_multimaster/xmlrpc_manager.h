@@ -88,14 +88,13 @@ public:
 
 class XMLRPCManager;
 typedef boost::shared_ptr<XMLRPCManager> XMLRPCManagerPtr;
+typedef boost::weak_ptr<XMLRPCManager> XMLRPCManagerWPtr;
 
 typedef boost::function<void(XmlRpc::XmlRpcValue&, XmlRpc::XmlRpcValue&)> XMLRPCFunc;
 
 class ROSCPP_DECL XMLRPCManager
 {
 public:
-  static const XMLRPCManagerPtr& instance();
-
   XMLRPCManager();
   ~XMLRPCManager();
 

@@ -77,6 +77,8 @@ protected:
   bool shutting_down_;
 
   boost::thread publish_thread_;
+
+  TopicManagerWPtr topic_manager_;
 };
 
 } // namespace ros

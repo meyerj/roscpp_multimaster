@@ -38,6 +38,7 @@
 #include "roscpp_multimaster/topic_manager.h"
 #include "roscpp_multimaster/advertise_options.h"
 #include "roscpp_multimaster/names.h"
+#include "roscpp_multimaster/master.h"
 
 #include <rosgraph_msgs/Log.h>
 
@@ -47,12 +48,13 @@ namespace ros
 ROSOutAppender::ROSOutAppender()
 : shutting_down_(false)
 , publish_thread_(boost::bind(&ROSOutAppender::logThread, this))
+, topic_manager_(Master::instance()->topicManager())
 {
   AdvertiseOptions ops;
   ops.init<rosgraph_msgs::Log>(names::resolve("/rosout"), 0);
   ops.latch = true;
   SubscriberCallbacksPtr cbs(new SubscriberCallbacks);
-  TopicManager::instance()->advertise(ops, cbs);
+  topic_manager_.lock()->advertise(ops, cbs);
 }
 
 ROSOutAppender::~ROSOutAppender()
@@ -142,7 +144,7 @@ void ROSOutAppender::logThread()
     V_Log::iterator end = local_queue.end();
     for (; it != end; ++it)
     {
-      TopicManager::instance()->publish(names::resolve("/rosout"), *(*it));
+      topic_manager_.lock()->publish(names::resolve("/rosout"), *(*it));
     }
   }
 }

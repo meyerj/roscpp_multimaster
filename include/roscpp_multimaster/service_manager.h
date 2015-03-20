@@ -36,6 +36,8 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 
+#include <boost/enable_shared_from_this.hpp>
+
 namespace ros
 {
 
@@ -51,12 +53,10 @@ typedef boost::shared_ptr<XMLRPCManager> XMLRPCManagerPtr;
 class ConnectionManager;
 typedef boost::shared_ptr<ConnectionManager> ConnectionManagerPtr;
 
-class ROSCPP_DECL ServiceManager
+class ROSCPP_DECL ServiceManager : public boost::enable_shared_from_this<ServiceManager>
 {
 public:
-  static const ServiceManagerPtr& instance();
-
-  ServiceManager();
+  ServiceManager(const MasterPtr& master);
   ~ServiceManager();
 
   /** @brief Lookup an advertised service.
@@ -119,12 +119,15 @@ public:
 
   void start();
   void shutdown();
+
 private:
 
   bool isServiceAdvertised(const std::string& serv_name);
   bool unregisterService(const std::string& service);
 
   bool isShuttingDown() { return shutting_down_; }
+
+  MasterWPtr master_;
 
   L_ServicePublication service_publications_;
   boost::mutex service_publications_mutex_;

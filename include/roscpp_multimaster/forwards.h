@@ -88,6 +88,11 @@ class Transport;
 typedef boost::shared_ptr<Transport> TransportPtr;
 class NodeHandle;
 typedef boost::shared_ptr<NodeHandle> NodeHandlePtr;
+class Master;
+typedef boost::shared_ptr<Master> MasterPtr;
+typedef boost::weak_ptr<Master> MasterWPtr;
+class Parameters;
+typedef boost::shared_ptr<Parameters> ParametersPtr;
 
 
 class SingleSubscriberPublisher;
@@ -162,12 +167,16 @@ typedef boost::function<void(const WallTimerEvent&)> WallTimerCallback;
 
 class ServiceManager;
 typedef boost::shared_ptr<ServiceManager> ServiceManagerPtr;
+typedef boost::weak_ptr<ServiceManager> ServiceManagerWPtr;
 class TopicManager;
 typedef boost::shared_ptr<TopicManager> TopicManagerPtr;
+typedef boost::weak_ptr<TopicManager> TopicManagerWPtr;
 class ConnectionManager;
 typedef boost::shared_ptr<ConnectionManager> ConnectionManagerPtr;
+typedef boost::weak_ptr<ConnectionManager> ConnectionManagerWPtr;
 class XMLRPCManager;
 typedef boost::shared_ptr<XMLRPCManager> XMLRPCManagerPtr;
+typedef boost::weak_ptr<XMLRPCManager> XMLRPCManagerWPtr;
 class PollManager;
 typedef boost::shared_ptr<PollManager> PollManagerPtr;
 

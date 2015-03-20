@@ -31,6 +31,11 @@
 #include "roscpp_multimaster/init.h"
 #include "roscpp_multimaster/network.h"
 
+#include "roscpp_multimaster/topic_manager.h"
+#include "roscpp_multimaster/service_manager.h"
+#include "roscpp_multimaster/connection_manager.h"
+#include "roscpp_multimaster/param.h"
+
 #include <ros/console.h>
 #include <ros/assert.h>
 
@@ -39,24 +44,52 @@
 namespace ros
 {
 
-namespace master
+std::map<std::string,MasterPtr> g_master;
+boost::mutex g_master_mutex;
+const MasterPtr& Master::instance(const std::string &uri)
 {
-
-uint32_t g_port = 0;
-std::string g_host;
-std::string g_uri;
-ros::WallDuration g_retry_timeout;
-
-void init(const M_string& remappings)
-{
-  M_string::const_iterator it = remappings.find("__master");
-  if (it != remappings.end())
+  if (g_master.find(uri) == g_master.end())
   {
-    g_uri = it->second;
+    boost::mutex::scoped_lock lock(g_master_mutex);
+    if (g_master.find(uri) == g_master.end())
+    {
+      MasterPtr master(new Master(uri));
+      g_master[uri] = master;
+      if (master->getURI() != uri)
+      {
+        g_master[master->getURI()] = master;
+      }
+    }
   }
 
-  if (g_uri.empty())
+  return g_master[uri];
+}
+
+Master::Master(const std::string& uri)
+  : port_(0)
+  , uri_(uri)
+{
+  if (!uri_.empty()) {
+    init(M_string());
+    start();
+  }
+}
+
+Master::~Master()
+{
+  shutdown();
+}
+
+void Master::init(const M_string& remappings)
+{
+  if (uri_.empty())
   {
+    M_string::const_iterator it = remappings.find("__master");
+    if (it != remappings.end())
+    {
+      uri_ = it->second;
+    }
+
     char *master_uri_env = NULL;
     #ifdef _MSC_VER
       _dupenv_s(&master_uri_env, NULL, "ROS_MASTER_URI");
@@ -75,7 +108,7 @@ void init(const M_string& remappings)
       ROS_BREAK();
     }
 
-    g_uri = master_uri_env;
+    uri_ = master_uri_env;
 
 #ifdef _MSC_VER
     // http://msdn.microsoft.com/en-us/library/ms175774(v=vs.80).aspx
@@ -84,46 +117,64 @@ void init(const M_string& remappings)
   }
 
   // Split URI into
-  if (!network::splitURI(g_uri, g_host, g_port))
+  if (!network::splitURI(uri_, host_, port_))
   {
-    ROS_FATAL( "Couldn't parse the master URI [%s] into a host:port pair.", g_uri.c_str());
+    ROS_FATAL( "Couldn't parse the master URI [%s] into a host:port pair.", uri_.c_str());
     ROS_BREAK();
   }
 }
 
-const std::string& getHost()
+void Master::start()
 {
-  return g_host;
+  topicManager()->start();
+  serviceManager()->start();
+  connectionManager()->start();
+//  PollManager::instance()->start();
+  xmlRpcManager()->start();
 }
 
-uint32_t getPort()
+void Master::shutdown()
 {
-  return g_port;
+  topicManager()->shutdown();
+  serviceManager()->shutdown();
+//  PollManager::instance()->shutdown();
+  connectionManager()->shutdown();
+  xmlRpcManager()->shutdown();
 }
 
-const std::string& getURI()
+const std::string& Master::getHost()
 {
-  return g_uri;
+  return host_;
 }
 
-void setRetryTimeout(ros::WallDuration timeout)
+uint32_t Master::getPort()
+{
+  return port_;
+}
+
+const std::string& Master::getURI()
+{
+  return uri_;
+}
+
+void Master::setRetryTimeout(ros::WallDuration timeout)
 {
   if (timeout < ros::WallDuration(0))
   {
     ROS_FATAL("retry timeout must not be negative.");
     ROS_BREAK();
   }
-  g_retry_timeout = timeout;
+  retry_timeout_ = timeout;
 }
 
-bool check()
+bool Master::check()
 {
   XmlRpc::XmlRpcValue args, result, payload;
   args[0] = this_node::getName();
   return execute("getPid", args, result, payload, false);
 }
 
-bool getTopics(V_TopicInfo& topics)
+bool Master::getTopics(master::V_TopicInfo& topics)
 {
   XmlRpc::XmlRpcValue args, result, payload;
   args[0] = this_node::getName();
@@ -137,13 +188,13 @@ bool getTopics(V_TopicInfo& topics)
   topics.clear();
   for (int i = 0; i < payload.size(); i++)
   {
-    topics.push_back(TopicInfo(std::string(payload[i][0]), std::string(payload[i][1])));
+    topics.push_back(master::TopicInfo(std::string(payload[i][0]), std::string(payload[i][1])));
   }
 
   return true;
 }
 
-bool getNodes(V_string& nodes)
+bool Master::getNodes(V_string& nodes)
 {
   XmlRpc::XmlRpcValue args, result, payload;
   args[0] = this_node::getName();
@@ -172,17 +223,13 @@ bool getNodes(V_string& nodes)
   return true;
 }
 
-#if defined(__APPLE__)
-boost::mutex g_xmlrpc_call_mutex;
-#endif
-
-bool execute(const std::string& method, const XmlRpc::XmlRpcValue& request, XmlRpc::XmlRpcValue& response, XmlRpc::XmlRpcValue& payload, bool wait_for_master)
+bool Master::execute(const std::string& method, const XmlRpc::XmlRpcValue& request, XmlRpc::XmlRpcValue& response, XmlRpc::XmlRpcValue& payload, bool wait_for_master)
 {
   ros::WallTime start_time = ros::WallTime::now();
 
   std::string master_host = getHost();
   uint32_t master_port = getPort();
-  XmlRpc::XmlRpcClient *c = XMLRPCManager::instance()->getXMLRPCClient(master_host, master_port, "/");
+  XmlRpc::XmlRpcClient *c = xmlRpcManager()->getXMLRPCClient(master_host, master_port, "/");
   bool printed = false;
   bool slept = false;
   bool ok = true;
@@ -191,13 +238,13 @@ bool execute(const std::string& method, const XmlRpc::XmlRpcValue& request, XmlR
     bool b = false;
     {
 #if defined(__APPLE__)
-      boost::mutex::scoped_lock lock(g_xmlrpc_call_mutex);
+      boost::mutex::scoped_lock lock(xmlrpc_call_mutex_);
 #endif
 
       b = c->execute(method.c_str(), request, response);
     }
 
-    ok = !ros::isShuttingDown() && !XMLRPCManager::instance()->isShuttingDown();
+    ok = !ros::isShuttingDown() && !xmlRpcManager()->isShuttingDown();
 
     if (!b && ok)
     {
@@ -209,14 +256,14 @@ bool execute(const std::string& method, const XmlRpc::XmlRpcValue& request, XmlR
 
       if (!wait_for_master)
       {
-        XMLRPCManager::instance()->releaseXMLRPCClient(c);
+        xmlRpcManager()->releaseXMLRPCClient(c);
         return false;
       }
 
-      if (!g_retry_timeout.isZero() && (ros::WallTime::now() - start_time) >= g_retry_timeout)
+      if (!retry_timeout_.isZero() && (ros::WallTime::now() - start_time) >= retry_timeout_)
       {
-        ROS_ERROR("[%s] Timed out trying to connect to the master after [%f] seconds", method.c_str(), g_retry_timeout.toSec());
-        XMLRPCManager::instance()->releaseXMLRPCClient(c);
+        ROS_ERROR("[%s] Timed out trying to connect to the master after [%f] seconds", method.c_str(), retry_timeout_.toSec());
+        xmlRpcManager()->releaseXMLRPCClient(c);
         return false;
       }
 
@@ -225,9 +272,9 @@ bool execute(const std::string& method, const XmlRpc::XmlRpcValue& request, XmlR
     }
     else
     {
-      if (!XMLRPCManager::instance()->validateXmlrpcResponse(method, response, payload))
+      if (!xmlRpcManager()->validateXmlrpcResponse(method, response, payload))
       {
-        XMLRPCManager::instance()->releaseXMLRPCClient(c);
+        xmlRpcManager()->releaseXMLRPCClient(c);
 
         return false;
       }
@@ -235,7 +282,7 @@ bool execute(const std::string& method, const XmlRpc::XmlRpcValue& request, XmlR
       break;
     }
 
-    ok = !ros::isShuttingDown() && !XMLRPCManager::instance()->isShuttingDown();
+    ok = !ros::isShuttingDown() && !xmlRpcManager()->isShuttingDown();
   } while(ok);
 
   if (ok && slept)
@@ -243,9 +290,127 @@ bool execute(const std::string& method, const XmlRpc::XmlRpcValue& request, XmlR
     ROS_INFO("Connected to master at [%s:%d]", master_host.c_str(), master_port);
   }
 
-  XMLRPCManager::instance()->releaseXMLRPCClient(c);
+  xmlRpcManager()->releaseXMLRPCClient(c);
 
   return true;
+}
+
+const TopicManagerPtr& Master::topicManager()
+{
+  if (!topic_manager_)
+  {
+    boost::mutex::scoped_lock lock(topic_manager_mutex_);
+    if (!topic_manager_)
+    {
+      topic_manager_.reset(new TopicManager(shared_from_this()));
+    }
+  }
+
+  return topic_manager_;
+}
+
+const ServiceManagerPtr& Master::serviceManager()
+{
+  if (!service_manager_)
+  {
+    boost::mutex::scoped_lock lock(service_manager_mutex_);
+    if (!service_manager_)
+    {
+      service_manager_.reset(new ServiceManager(shared_from_this()));
+    }
+  }
+
+  return service_manager_;
+}
+
+const ParametersPtr& Master::parameters()
+{
+  if (!parameters_)
+  {
+    boost::mutex::scoped_lock lock(parameters_mutex_);
+    if (!parameters_)
+    {
+      parameters_.reset(new Parameters(shared_from_this()));
+    }
+  }
+
+  return parameters_;
+}
+
+const ConnectionManagerPtr& Master::connectionManager()
+{
+  if (!connection_manager_)
+  {
+    boost::mutex::scoped_lock lock(connection_manager_mutex_);
+    if (!connection_manager_)
+    {
+      connection_manager_.reset(new ConnectionManager(shared_from_this()));
+    }
+  }
+
+  return connection_manager_;
+}
+
+const XMLRPCManagerPtr& Master::xmlRpcManager()
+{
+  if (!xmlrpc_manager_)
+  {
+    boost::mutex::scoped_lock lock(xmlrpc_manager_mutex_);
+    if (!xmlrpc_manager_)
+    {
+      xmlrpc_manager_.reset(new XMLRPCManager);
+    }
+  }
+
+  return xmlrpc_manager_;
+}
+
+namespace master
+{
+
+void init(const M_string& remappings)
+{
+  Master::instance()->init(remappings);
+}
+
+const std::string& getHost()
+{
+  return Master::instance()->getHost();
+}
+
+uint32_t getPort()
+{
+  return Master::instance()->getPort();
+}
+
+const std::string& getURI()
+{
+  return Master::instance()->getURI();
+}
+
+void setRetryTimeout(ros::WallDuration timeout)
+{
+  Master::instance()->setRetryTimeout(timeout);
+}
+
+bool check()
+{
+  return Master::instance()->check();
+}
+
+bool getTopics(V_TopicInfo& topics)
+{
+  return Master::instance()->getTopics(topics);
+}
+
+bool getNodes(V_string& nodes)
+{
+  return Master::instance()->getNodes(nodes);
+}
+
+bool execute(const std::string& method, const XmlRpc::XmlRpcValue& request, XmlRpc::XmlRpcValue& response, XmlRpc::XmlRpcValue& payload, bool wait_for_master)
+{
+  return Master::instance()->execute(method, request, response, payload, wait_for_master);
 }
 
 } // namespace master

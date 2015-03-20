@@ -94,6 +94,23 @@ namespace ros
      * global reference count.  If not, it starts the node with
      * ros::start() and sets the reference count to 1.
      *
+     * \param master The ROS master for this NodeHandle.
+     * \param ns Namespace for this NodeHandle.  This acts in addition to any namespace assigned to this ROS node.
+     *           eg. If the node's namespace is "/a" and the namespace passed in here is "b", all
+     *           topics/services/parameters will be prefixed with "/a/b/"
+     * \param remappings Remappings for this NodeHandle.
+     * \throws InvalidNameException if the namespace is not a valid graph resource name
+     */
+    NodeHandle(const MasterPtr& master, const std::string& ns = std::string(), const M_string& remappings = M_string());
+
+    /**
+     * \brief Constructor
+     *
+     * When a NodeHandle is constructed, it checks to see if the global
+     * node state has already been started.  If so, it increments a
+     * global reference count.  If not, it starts the node with
+     * ros::start() and sets the reference count to 1.
+     *
      * \param ns Namespace for this NodeHandle.  This acts in addition to any namespace assigned to this ROS node.
      *           eg. If the node's namespace is "/a" and the namespace passed in here is "b", all 
      *           topics/services/parameters will be prefixed with "/a/b/"
@@ -101,6 +118,7 @@ namespace ros
      * \throws InvalidNameException if the namespace is not a valid graph resource name
      */
     NodeHandle(const std::string& ns = std::string(), const M_string& remappings = M_string());
+
     /**
      * \brief Copy constructor
      *
@@ -109,6 +127,7 @@ namespace ros
      * the global node state by 1.
      */
     NodeHandle(const NodeHandle& rhs);
+
     /**
      * \brief Parent constructor
      *
@@ -125,6 +144,7 @@ namespace ros
      * graph resource name
      */
     NodeHandle(const NodeHandle& parent, const std::string& ns);
+
     /**
      * \brief Parent constructor
      *
@@ -141,6 +161,7 @@ namespace ros
      * \throws InvalidNameException if the namespace is not a valid graph resource name
      */
     NodeHandle(const NodeHandle& parent, const std::string& ns, const M_string& remappings);
+
     /**
      * \brief Destructor
      *
@@ -1939,6 +1960,8 @@ if (handle)
    */
   bool ok() const;
 
+  const MasterPtr& master() const;
+
 private:
   struct no_validate { };
   // this is pretty awful, but required to preserve public interface (and make minimum possible changes)
@@ -1955,6 +1978,7 @@ private:
   std::string unresolved_namespace_;
   M_string remappings_;
   M_string unresolved_remappings_;
+  MasterPtr master_;
 
   CallbackQueueInterface* callback_queue_;
 

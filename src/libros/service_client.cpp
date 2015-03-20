@@ -30,6 +30,7 @@
 #include "roscpp_multimaster/connection.h"
 #include "roscpp_multimaster/service_manager.h"
 #include "roscpp_multimaster/service.h"
+#include "roscpp_multimaster/master.h"
 
 namespace ros
 {
@@ -81,6 +82,21 @@ bool ServiceClient::Impl::isValid() const
   return server_link_->isValid();
 }
 
+ServiceClient::ServiceClient(const ServiceManagerPtr& service_manager, const std::string& service_name, bool persistent, const M_string& header_values, const std::string& service_md5sum)
+: impl_(new Impl)
+{
+  impl_->name_ = service_name;
+  impl_->persistent_ = persistent;
+  impl_->header_values_ = header_values;
+  impl_->service_md5sum_ = service_md5sum;
+  impl_->service_manager_ = service_manager;
+
+  if (persistent)
+  {
+    impl_->server_link_ = impl_->service_manager_->createServiceServerLink(impl_->name_, impl_->persistent_, impl_->service_md5sum_, impl_->service_md5sum_, impl_->header_values_);
+  }
+}
+
 ServiceClient::ServiceClient(const std::string& service_name, bool persistent, const M_string& header_values, const std::string& service_md5sum)
 : impl_(new Impl)
 {
@@ -88,10 +104,11 @@ ServiceClient::ServiceClient(const std::string& service_name, bool persistent, c
   impl_->persistent_ = persistent;
   impl_->header_values_ = header_values;
   impl_->service_md5sum_ = service_md5sum;
+  impl_->service_manager_ = Master::instance()->serviceManager();
 
   if (persistent)
   {
-    impl_->server_link_ = ServiceManager::instance()->createServiceServerLink(impl_->name_, impl_->persistent_, impl_->service_md5sum_, impl_->service_md5sum_, impl_->header_values_);
+    impl_->server_link_ = impl_->service_manager_->createServiceServerLink(impl_->name_, impl_->persistent_, impl_->service_md5sum_, impl_->service_md5sum_, impl_->header_values_);
   }
 }
 
@@ -120,7 +137,7 @@ bool ServiceClient::call(const SerializedMessage& req, SerializedMessage& resp, 
   {
     if (!impl_->server_link_)
     {
-      impl_->server_link_ = ServiceManager::instance()->createServiceServerLink(impl_->name_, impl_->persistent_, service_md5sum, service_md5sum, impl_->header_values_);
+      impl_->server_link_ = impl_->service_manager_->createServiceServerLink(impl_->name_, impl_->persistent_, service_md5sum, service_md5sum, impl_->header_values_);
 
       if (!impl_->server_link_)
       {
@@ -132,7 +149,7 @@ bool ServiceClient::call(const SerializedMessage& req, SerializedMessage& resp, 
   }
   else
   {
-    link = ServiceManager::instance()->createServiceServerLink(impl_->name_, impl_->persistent_, service_md5sum, service_md5sum, impl_->header_values_);
+    link = impl_->service_manager_->createServiceServerLink(impl_->name_, impl_->persistent_, service_md5sum, service_md5sum, impl_->header_values_);
 
     if (!link)
     {

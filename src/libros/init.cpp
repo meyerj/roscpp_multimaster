@@ -34,6 +34,7 @@
 
 #include "roscpp_multimaster/init.h"
 #include "roscpp_multimaster/names.h"
+#include "roscpp_multimaster/master.h"
 #include "roscpp_multimaster/xmlrpc_manager.h"
 #include "roscpp_multimaster/poll_manager.h"
 #include "roscpp_multimaster/connection_manager.h"
@@ -247,7 +248,7 @@ bool setLoggerLevel(roscpp::SetLoggerLevel::Request& req, roscpp::SetLoggerLevel
 bool closeAllConnections(roscpp::Empty::Request&, roscpp::Empty::Response&)
 {
   ROSCPP_LOG_DEBUG("close_all_connections service called, closing connections");
-  ConnectionManager::instance()->clear(Connection::TransportDisconnect);
+  Master::instance()->connectionManager()->clear(Connection::TransportDisconnect);
   return true;
 }
 
@@ -335,15 +336,12 @@ void start()
   param::param("/tcp_keepalive", TransportTCP::s_use_keepalive_, TransportTCP::s_use_keepalive_);
 
   PollManager::instance()->addPollThreadListener(checkForShutdown);
-  XMLRPCManager::instance()->bind("shutdown", shutdownCallback);
+  Master::instance()->xmlRpcManager()->bind("shutdown", shutdownCallback);
 
   initInternalTimerManager();
 
-  TopicManager::instance()->start();
-  ServiceManager::instance()->start();
-  ConnectionManager::instance()->start();
+  Master::instance()->start();
   PollManager::instance()->start();
-  XMLRPCManager::instance()->start();
 
   if (!(g_init_options & init_options::NoSigintHandler))
   {
@@ -364,7 +362,7 @@ void start()
     ros::AdvertiseServiceOptions ops;
     ops.init<roscpp::GetLoggers>(names::resolve("~get_loggers"), getLoggers);
     ops.callback_queue = getInternalCallbackQueue().get();
-    ServiceManager::instance()->advertiseService(ops);
+    Master::instance()->serviceManager()->advertiseService(ops);
   }
 
   if (g_shutting_down) goto end;
@@ -373,7 +371,7 @@ void start()
     ros::AdvertiseServiceOptions ops;
     ops.init<roscpp::SetLoggerLevel>(names::resolve("~set_logger_level"), setLoggerLevel);
     ops.callback_queue = getInternalCallbackQueue().get();
-    ServiceManager::instance()->advertiseService(ops);
+    Master::instance()->serviceManager()->advertiseService(ops);
   }
 
   if (g_shutting_down) goto end;
@@ -383,7 +381,7 @@ void start()
     ros::AdvertiseServiceOptions ops;
     ops.init<roscpp::Empty>(names::resolve("~debug/close_all_connections"), closeAllConnections);
     ops.callback_queue = getInternalCallbackQueue().get();
-    ServiceManager::instance()->advertiseService(ops);
+    Master::instance()->serviceManager()->advertiseService(ops);
   }
 
   if (g_shutting_down) goto end;
@@ -404,7 +402,7 @@ void start()
       ros::SubscribeOptions ops;
       ops.init<rosgraph_msgs::Clock>(names::resolve("/clock"), 1, clockCallback);
       ops.callback_queue = getInternalCallbackQueue().get();
-      TopicManager::instance()->subscribe(ops);
+      Master::instance()->topicManager()->subscribe(ops);
     }
   }
 
@@ -415,7 +413,7 @@ void start()
 
   ROSCPP_LOG_DEBUG("Started node [%s], pid [%d], bound on [%s], xmlrpc port [%d], tcpros port [%d], using [%s] time", 
 		   this_node::getName().c_str(), getpid(), network::getHost().c_str(), 
-		   XMLRPCManager::instance()->getServerPort(), ConnectionManager::instance()->getTCPPort(), 
+       Master::instance()->xmlRpcManager()->getServerPort(), Master::instance()->connectionManager()->getTCPPort(),
 		   Time::useSystemTime() ? "real" : "sim");
 
   // Label used to abort if we've started shutting down in the middle of start(), which can happen in
@@ -578,11 +576,8 @@ void shutdown()
 
   if (g_started)
   {
-    TopicManager::instance()->shutdown();
-    ServiceManager::instance()->shutdown();
+    Master::instance()->shutdown();
     PollManager::instance()->shutdown();
-    ConnectionManager::instance()->shutdown();
-    XMLRPCManager::instance()->shutdown();
   }
 
   WallTime end = WallTime::now();

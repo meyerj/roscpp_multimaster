@@ -30,10 +30,10 @@
 #include "roscpp_multimaster/xmlrpc_manager.h"
 #include "roscpp_multimaster/this_node.h"
 #include "roscpp_multimaster/names.h"
+#include "roscpp_multimaster/master.h"
 
 #include <ros/console.h>
 
-#include <boost/thread/mutex.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <vector>
@@ -42,29 +42,30 @@
 namespace ros
 {
 
-namespace param
+Parameters::Parameters(const MasterPtr& master)
+: master_(master)
 {
+}
 
-typedef std::map<std::string, XmlRpc::XmlRpcValue> M_Param;
-M_Param g_params;
-boost::mutex g_params_mutex;
-S_string g_subscribed_params;
+Parameters::~Parameters()
+{
+}
 
-void invalidateParentParams(const std::string& key)
+void Parameters::invalidateParentParams(const std::string& key)
 {
   std::string ns_key = names::parentNamespace(key);
   while (ns_key != "" && ns_key != "/")
   {
-    if (g_subscribed_params.find(ns_key) != g_subscribed_params.end())
+    if (subscribed_params_.find(ns_key) != subscribed_params_.end())
     {
       // by erasing the key the parameter will be re-queried
-      g_params.erase(ns_key);
+      params_.erase(ns_key);
     }
     ns_key = names::parentNamespace(ns_key);
   }
 }
 
-void set(const std::string& key, const XmlRpc::XmlRpcValue& v)
+void Parameters::set(const std::string& key, const XmlRpc::XmlRpcValue& v)
 {
   std::string mapped_key = ros::names::resolve(key);
 
@@ -75,23 +76,23 @@ void set(const std::string& key, const XmlRpc::XmlRpcValue& v)
 
   {
     // Lock around the execute to the master in case we get a parameter update on this value between
-    // executing on the master and setting the parameter in the g_params list.
-    boost::mutex::scoped_lock lock(g_params_mutex);
+    // executing on the master and setting the parameter in the params_ list.
+    boost::mutex::scoped_lock lock(params_mutex_);
 
     if (master::execute("setParam", params, result, payload, true))
     {
       // Update our cached params list now so that if get() is called immediately after param::set()
       // we already have the cached state and our value will be correct
-      if (g_subscribed_params.find(mapped_key) != g_subscribed_params.end())
+      if (subscribed_params_.find(mapped_key) != subscribed_params_.end())
       {
-        g_params[mapped_key] = v;
+        params_[mapped_key] = v;
       }
       invalidateParentParams(mapped_key);
     }
   }
 }
 
-void set(const std::string& key, const std::string& s)
+void Parameters::set(const std::string& key, const std::string& s)
 {
   // construct xmlrpc_c::value object of the std::string and
   // call param::set(key, xmlvalue);
@@ -99,7 +100,7 @@ void set(const std::string& key, const std::string& s)
   ros::param::set(key, v);
 }
 
-void set(const std::string& key, const char* s)
+void Parameters::set(const std::string& key, const char* s)
 {
   // construct xmlrpc_c::value object of the std::string and
   // call param::set(key, xmlvalue);
@@ -108,26 +109,26 @@ void set(const std::string& key, const char* s)
   ros::param::set(key, v);
 }
 
-void set(const std::string& key, double d)
+void Parameters::set(const std::string& key, double d)
 {
   XmlRpc::XmlRpcValue v(d);
   ros::param::set(key, v);
 }
 
-void set(const std::string& key, int i)
+void Parameters::set(const std::string& key, int i)
 {
   XmlRpc::XmlRpcValue v(i);
   ros::param::set(key, v);
 }
 
-void set(const std::string& key, bool b)
+void Parameters::set(const std::string& key, bool b)
 {
   XmlRpc::XmlRpcValue v(b);
   ros::param::set(key, v);
 }
 
 template <class T>
-  void setImpl(const std::string& key, const std::vector<T>& vec)
+  void Parameters::setImpl(const std::string& key, const std::vector<T>& vec)
 {
   // Note: the XmlRpcValue starts off as "invalid" and assertArray turns it
   // into an array type with the given size
@@ -142,33 +143,33 @@ template <class T>
   ros::param::set(key, xml_vec);
 }
 
-void set(const std::string& key, const std::vector<std::string>& vec)
+void Parameters::set(const std::string& key, const std::vector<std::string>& vec)
 {
   setImpl(key, vec);
 }
 
-void set(const std::string& key, const std::vector<double>& vec)
+void Parameters::set(const std::string& key, const std::vector<double>& vec)
 {
   setImpl(key, vec);
 }
 
-void set(const std::string& key, const std::vector<float>& vec)
+void Parameters::set(const std::string& key, const std::vector<float>& vec)
 {
   setImpl(key, vec);
 }
 
-void set(const std::string& key, const std::vector<int>& vec)
+void Parameters::set(const std::string& key, const std::vector<int>& vec)
 {
   setImpl(key, vec);
 }
 
-void set(const std::string& key, const std::vector<bool>& vec)
+void Parameters::set(const std::string& key, const std::vector<bool>& vec)
 {
   setImpl(key, vec);
 }
 
 template <class T>
-  void setImpl(const std::string& key, const std::map<std::string, T>& map)
+  void Parameters::setImpl(const std::string& key, const std::map<std::string, T>& map)
 {
   // Note: the XmlRpcValue starts off as "invalid" and assertArray turns it
   // into an array type with the given size
@@ -183,32 +184,32 @@ template <class T>
   ros::param::set(key, xml_value);
 }
 
-void set(const std::string& key, const std::map<std::string, std::string>& map)
+void Parameters::set(const std::string& key, const std::map<std::string, std::string>& map)
 {
   setImpl(key, map);
 }
 
-void set(const std::string& key, const std::map<std::string, double>& map)
+void Parameters::set(const std::string& key, const std::map<std::string, double>& map)
 {
   setImpl(key, map);
 }
 
-void set(const std::string& key, const std::map<std::string, float>& map)
+void Parameters::set(const std::string& key, const std::map<std::string, float>& map)
 {
   setImpl(key, map);
 }
 
-void set(const std::string& key, const std::map<std::string, int>& map)
+void Parameters::set(const std::string& key, const std::map<std::string, int>& map)
 {
   setImpl(key, map);
 }
 
-void set(const std::string& key, const std::map<std::string, bool>& map)
+void Parameters::set(const std::string& key, const std::map<std::string, bool>& map)
 {
   setImpl(key, map);
 }
 
-bool has(const std::string& key)
+bool Parameters::has(const std::string& key)
 {
   XmlRpc::XmlRpcValue params, result, payload;
   params[0] = this_node::getName();
@@ -225,15 +226,15 @@ bool has(const std::string& key)
   return payload;
 }
 
-bool del(const std::string& key)
+bool Parameters::del(const std::string& key)
 {
   std::string mapped_key = ros::names::resolve(key);
 
   {
-    boost::mutex::scoped_lock lock(g_params_mutex);
+    boost::mutex::scoped_lock lock(params_mutex_);
 
-    g_subscribed_params.erase(mapped_key);
-    g_params.erase(mapped_key);
+    subscribed_params_.erase(mapped_key);
+    params_.erase(mapped_key);
   }
 
   XmlRpc::XmlRpcValue params, result, payload;
@@ -250,19 +251,19 @@ bool del(const std::string& key)
   return true;
 }
 
-bool getImpl(const std::string& key, XmlRpc::XmlRpcValue& v, bool use_cache)
+bool Parameters::getImpl(const std::string& key, XmlRpc::XmlRpcValue& v, bool use_cache)
 {
   std::string mapped_key = ros::names::resolve(key);
   if (mapped_key.empty()) mapped_key = "/";
 
   if (use_cache)
   {
-    boost::mutex::scoped_lock lock(g_params_mutex);
+    boost::mutex::scoped_lock lock(params_mutex_);
 
-    if (g_subscribed_params.find(mapped_key) != g_subscribed_params.end())
+    if (subscribed_params_.find(mapped_key) != subscribed_params_.end())
     {
-      M_Param::iterator it = g_params.find(mapped_key);
-      if (it != g_params.end())
+      M_Param::iterator it = params_.find(mapped_key);
+      if (it != params_.end())
       {
         if (it->second.valid())
         {
@@ -281,17 +282,17 @@ bool getImpl(const std::string& key, XmlRpc::XmlRpcValue& v, bool use_cache)
     else
     {
       // parameter we've never seen before, register for update from the master
-      if (g_subscribed_params.insert(mapped_key).second)
+      if (subscribed_params_.insert(mapped_key).second)
       {
         XmlRpc::XmlRpcValue params, result, payload;
         params[0] = this_node::getName();
-        params[1] = XMLRPCManager::instance()->getServerURI();
+        params[1] = master_.lock()->xmlRpcManager()->getServerURI();
         params[2] = mapped_key;
 
         if (!master::execute("subscribeParam", params, result, payload, false))
         {
           ROS_DEBUG_NAMED("cached_parameters", "Subscribe to parameter [%s]: call to the master failed", mapped_key.c_str());
-          g_subscribed_params.erase(mapped_key);
+          subscribed_params_.erase(mapped_key);
           use_cache = false;
         }
         else
@@ -313,16 +314,16 @@ bool getImpl(const std::string& key, XmlRpc::XmlRpcValue& v, bool use_cache)
 
   if (use_cache)
   {
-    boost::mutex::scoped_lock lock(g_params_mutex);
+    boost::mutex::scoped_lock lock(params_mutex_);
 
     ROS_DEBUG_NAMED("cached_parameters", "Caching parameter [%s] with value type [%d]", mapped_key.c_str(), v.getType());
-    g_params[mapped_key] = v;
+    params_[mapped_key] = v;
   }
 
   return ret;
 }
 
-bool getImpl(const std::string& key, std::string& s, bool use_cache)
+bool Parameters::getImpl(const std::string& key, std::string& s, bool use_cache)
 {
   XmlRpc::XmlRpcValue v;
   if (!getImpl(key, v, use_cache))
@@ -333,7 +334,7 @@ bool getImpl(const std::string& key, std::string& s, bool use_cache)
   return true;
 }
 
-bool getImpl(const std::string& key, double& d, bool use_cache)
+bool Parameters::getImpl(const std::string& key, double& d, bool use_cache)
 {
   XmlRpc::XmlRpcValue v;
   if (!getImpl(key, v, use_cache))
@@ -357,7 +358,7 @@ bool getImpl(const std::string& key, double& d, bool use_cache)
   return true;
 }
 
-bool getImpl(const std::string& key, float& f, bool use_cache)
+bool Parameters::getImpl(const std::string& key, float& f, bool use_cache)
 {
   double d = static_cast<double>(f);
   bool result = getImpl(key, d, use_cache);
@@ -366,7 +367,7 @@ bool getImpl(const std::string& key, float& f, bool use_cache)
   return result;
 }
 
-bool getImpl(const std::string& key, int& i, bool use_cache)
+bool Parameters::getImpl(const std::string& key, int& i, bool use_cache)
 {
   XmlRpc::XmlRpcValue v;
   if (!getImpl(key, v, use_cache))
@@ -401,7 +402,7 @@ bool getImpl(const std::string& key, int& i, bool use_cache)
   return true;
 }
 
-bool getImpl(const std::string& key, bool& b, bool use_cache)
+bool Parameters::getImpl(const std::string& key, bool& b, bool use_cache)
 {
   XmlRpc::XmlRpcValue v;
   if (!getImpl(key, v, use_cache))
@@ -412,62 +413,62 @@ bool getImpl(const std::string& key, bool& b, bool use_cache)
   return true;
 }
 
-bool get(const std::string& key, std::string& s)
+bool Parameters::get(const std::string& key, std::string& s)
 {
 	return getImpl(key, s, false);
 }
 
-bool get(const std::string& key, double& d)
+bool Parameters::get(const std::string& key, double& d)
 {
 	return getImpl(key, d, false);
 }
 
-bool get(const std::string& key, float& f)
+bool Parameters::get(const std::string& key, float& f)
 {
 	return getImpl(key, f, false);
 }
 
-bool get(const std::string& key, int& i)
+bool Parameters::get(const std::string& key, int& i)
 {
 	return getImpl(key, i, false);
 }
 
-bool get(const std::string& key, bool& b)
+bool Parameters::get(const std::string& key, bool& b)
 {
 	return getImpl(key, b, false);
 }
 
-bool get(const std::string& key, XmlRpc::XmlRpcValue& v)
+bool Parameters::get(const std::string& key, XmlRpc::XmlRpcValue& v)
 {
 	return getImpl(key, v, false);
 }
 
-bool getCached(const std::string& key, std::string& s)
+bool Parameters::getCached(const std::string& key, std::string& s)
 {
 	return getImpl(key, s, true);
 }
 
-bool getCached(const std::string& key, double& d)
+bool Parameters::getCached(const std::string& key, double& d)
 {
 	return getImpl(key, d, true);
 }
 
-bool getCached(const std::string& key, float& f)
+bool Parameters::getCached(const std::string& key, float& f)
 {
 	return getImpl(key, f, true);
 }
 
-bool getCached(const std::string& key, int& i)
+bool Parameters::getCached(const std::string& key, int& i)
 {
 	return getImpl(key, i, true);
 }
 
-bool getCached(const std::string& key, bool& b)
+bool Parameters::getCached(const std::string& key, bool& b)
 {
 	return getImpl(key, b, true);
 }
 
-bool getCached(const std::string& key, XmlRpc::XmlRpcValue& v)
+bool Parameters::getCached(const std::string& key, XmlRpc::XmlRpcValue& v)
 {
 	return getImpl(key, v, true);
 }
@@ -580,7 +581,7 @@ template<> bool xml_cast(XmlRpc::XmlRpcValue xml_value)
 }
   
 template <class T>
-  bool getImpl(const std::string& key, std::vector<T>& vec, bool cached)
+  bool Parameters::getImpl(const std::string& key, std::vector<T>& vec, bool cached)
 {
   XmlRpc::XmlRpcValue xml_array;
   if(!getImpl(key, xml_array, cached)) {
@@ -607,50 +608,50 @@ template <class T>
   return true;
 }
 
-bool get(const std::string& key, std::vector<std::string>& vec)
+bool Parameters::get(const std::string& key, std::vector<std::string>& vec)
 {
   return getImpl(key, vec, false);
 }
-bool get(const std::string& key, std::vector<double>& vec)
+bool Parameters::get(const std::string& key, std::vector<double>& vec)
 {
   return getImpl(key, vec, false);
 }
-bool get(const std::string& key, std::vector<float>& vec)
+bool Parameters::get(const std::string& key, std::vector<float>& vec)
 {
   return getImpl(key, vec, false);
 }
-bool get(const std::string& key, std::vector<int>& vec)
+bool Parameters::get(const std::string& key, std::vector<int>& vec)
 {
   return getImpl(key, vec, false);
 }
-bool get(const std::string& key, std::vector<bool>& vec)
+bool Parameters::get(const std::string& key, std::vector<bool>& vec)
 {
   return getImpl(key, vec, false);
 }
 
-bool getCached(const std::string& key, std::vector<std::string>& vec)
+bool Parameters::getCached(const std::string& key, std::vector<std::string>& vec)
 {
   return getImpl(key, vec, true);
 }
-bool getCached(const std::string& key, std::vector<double>& vec)
+bool Parameters::getCached(const std::string& key, std::vector<double>& vec)
 {
   return getImpl(key, vec, true);
 }
-bool getCached(const std::string& key, std::vector<float>& vec)
+bool Parameters::getCached(const std::string& key, std::vector<float>& vec)
 {
   return getImpl(key, vec, true);
 }
-bool getCached(const std::string& key, std::vector<int>& vec)
+bool Parameters::getCached(const std::string& key, std::vector<int>& vec)
 {
   return getImpl(key, vec, true);
 }
-bool getCached(const std::string& key, std::vector<bool>& vec)
+bool Parameters::getCached(const std::string& key, std::vector<bool>& vec)
 {
   return getImpl(key, vec, true);
 }
 
 template <class T>
-  bool getImpl(const std::string& key, std::map<std::string, T>& map, bool cached)
+  bool Parameters::getImpl(const std::string& key, std::map<std::string, T>& map, bool cached)
 {
   XmlRpc::XmlRpcValue xml_value;
   if(!getImpl(key, xml_value, cached)) {
@@ -678,55 +679,55 @@ template <class T>
   return true;
 }
 
-bool get(const std::string& key, std::map<std::string, std::string>& map)
+bool Parameters::get(const std::string& key, std::map<std::string, std::string>& map)
 {
   return getImpl(key, map, false);
 }
-bool get(const std::string& key, std::map<std::string, double>& map)
+bool Parameters::get(const std::string& key, std::map<std::string, double>& map)
 {
   return getImpl(key, map, false);
 }
-bool get(const std::string& key, std::map<std::string, float>& map)
+bool Parameters::get(const std::string& key, std::map<std::string, float>& map)
 {
   return getImpl(key, map, false);
 }
-bool get(const std::string& key, std::map<std::string, int>& map)
+bool Parameters::get(const std::string& key, std::map<std::string, int>& map)
 {
   return getImpl(key, map, false);
 }
-bool get(const std::string& key, std::map<std::string, bool>& map)
+bool Parameters::get(const std::string& key, std::map<std::string, bool>& map)
 {
   return getImpl(key, map, false);
 }
 
-bool getCached(const std::string& key, std::map<std::string, std::string>& map)
+bool Parameters::getCached(const std::string& key, std::map<std::string, std::string>& map)
 {
   return getImpl(key, map, true);
 }
-bool getCached(const std::string& key, std::map<std::string, double>& map)
+bool Parameters::getCached(const std::string& key, std::map<std::string, double>& map)
 {
   return getImpl(key, map, true);
 }
-bool getCached(const std::string& key, std::map<std::string, float>& map)
+bool Parameters::getCached(const std::string& key, std::map<std::string, float>& map)
 {
   return getImpl(key, map, true);
 }
-bool getCached(const std::string& key, std::map<std::string, int>& map)
+bool Parameters::getCached(const std::string& key, std::map<std::string, int>& map)
 {
   return getImpl(key, map, true);
 }
-bool getCached(const std::string& key, std::map<std::string, bool>& map)
+bool Parameters::getCached(const std::string& key, std::map<std::string, bool>& map)
 {
   return getImpl(key, map, true);
 }
 
 
-bool search(const std::string& key, std::string& result_out)
+bool Parameters::search(const std::string& key, std::string& result_out)
 {
   return search(this_node::getName(), key, result_out);
 }
 
-bool search(const std::string& ns, const std::string& key, std::string& result_out)
+bool Parameters::search(const std::string& ns, const std::string& key, std::string& result_out)
 {
   XmlRpc::XmlRpcValue params, result, payload;
   params[0] = ns;
@@ -755,30 +756,30 @@ bool search(const std::string& ns, const std::string& key, std::string& result_o
   return true;
 }
 
-void update(const std::string& key, const XmlRpc::XmlRpcValue& v)
+void Parameters::update(const std::string& key, const XmlRpc::XmlRpcValue& v)
 {
   std::string clean_key = names::clean(key);
   ROS_DEBUG_NAMED("cached_parameters", "Received parameter update for key [%s]", clean_key.c_str());
 
-  boost::mutex::scoped_lock lock(g_params_mutex);
+  boost::mutex::scoped_lock lock(params_mutex_);
 
-  if (g_subscribed_params.find(clean_key) != g_subscribed_params.end())
+  if (subscribed_params_.find(clean_key) != subscribed_params_.end())
   {
-    g_params[clean_key] = v;
+    params_[clean_key] = v;
   }
   invalidateParentParams(clean_key);
 }
 
-void paramUpdateCallback(XmlRpc::XmlRpcValue& params, XmlRpc::XmlRpcValue& result)
+void Parameters::paramUpdateCallback(XmlRpc::XmlRpcValue& params, XmlRpc::XmlRpcValue& result)
 {
   result[0] = 1;
   result[1] = std::string("");
   result[2] = 0;
 
-  ros::param::update((std::string)params[1], params[2]);
+  update((std::string)params[1], params[2]);
 }
 
-void init(const M_string& remappings)
+void Parameters::init(const M_string& remappings)
 {
   M_string::const_iterator it = remappings.begin();
   M_string::const_iterator end = remappings.end();
@@ -845,7 +846,266 @@ void init(const M_string& remappings)
     }
   }
 
-  XMLRPCManager::instance()->bind("paramUpdate", paramUpdateCallback);
+  master_.lock()->xmlRpcManager()->bind("paramUpdate", boost::bind(&Parameters::paramUpdateCallback, this, _1, _2));
+}
+
+
+namespace param
+{
+
+void set(const std::string& key, const XmlRpc::XmlRpcValue& v)
+{
+  Master::instance()->parameters()->set(key, v);
+}
+
+void set(const std::string& key, const std::string& s)
+{
+  Master::instance()->parameters()->set(key, s);
+}
+
+void set(const std::string& key, const char* s)
+{
+  Master::instance()->parameters()->set(key, s);
+}
+
+void set(const std::string& key, double d)
+{
+  Master::instance()->parameters()->set(key, d);
+}
+
+void set(const std::string& key, int i)
+{
+  Master::instance()->parameters()->set(key, i);
+}
+
+void set(const std::string& key, bool b)
+{
+  Master::instance()->parameters()->set(key, b);
+}
+
+void set(const std::string& key, const std::vector<std::string>& vec)
+{
+  Master::instance()->parameters()->set(key, vec);
+}
+
+void set(const std::string& key, const std::vector<double>& vec)
+{
+  Master::instance()->parameters()->set(key, vec);
+}
+
+void set(const std::string& key, const std::vector<float>& vec)
+{
+  Master::instance()->parameters()->set(key, vec);
+}
+
+void set(const std::string& key, const std::vector<int>& vec)
+{
+  Master::instance()->parameters()->set(key, vec);
+}
+
+void set(const std::string& key, const std::vector<bool>& vec)
+{
+  Master::instance()->parameters()->set(key, vec);
+}
+
+void set(const std::string& key, const std::map<std::string, std::string>& map)
+{
+  Master::instance()->parameters()->set(key, map);
+}
+
+void set(const std::string& key, const std::map<std::string, double>& map)
+{
+  Master::instance()->parameters()->set(key, map);
+}
+
+void set(const std::string& key, const std::map<std::string, float>& map)
+{
+  Master::instance()->parameters()->set(key, map);
+}
+
+void set(const std::string& key, const std::map<std::string, int>& map)
+{
+  Master::instance()->parameters()->set(key, map);
+}
+
+void set(const std::string& key, const std::map<std::string, bool>& map)
+{
+  Master::instance()->parameters()->set(key, map);
+}
+
+bool has(const std::string& key)
+{
+  return Master::instance()->parameters()->has(key);
+}
+
+bool del(const std::string& key)
+{
+  return Master::instance()->parameters()->del(key);
+}
+
+bool get(const std::string& key, std::string& s)
+{
+  return Master::instance()->parameters()->get(key, s);
+}
+
+bool get(const std::string& key, double& d)
+{
+  return Master::instance()->parameters()->get(key, d);
+}
+
+bool get(const std::string& key, float& f)
+{
+  return Master::instance()->parameters()->get(key, f);
+}
+
+bool get(const std::string& key, int& i)
+{
+  return Master::instance()->parameters()->get(key, i);
+}
+
+bool get(const std::string& key, bool& b)
+{
+  return Master::instance()->parameters()->get(key, b);
+}
+
+bool get(const std::string& key, XmlRpc::XmlRpcValue& v)
+{
+  return Master::instance()->parameters()->get(key, v);
+}
+
+bool getCached(const std::string& key, std::string& s)
+{
+  return Master::instance()->parameters()->getCached(key, s);
+}
+
+bool getCached(const std::string& key, double& d)
+{
+  return Master::instance()->parameters()->getCached(key, d);
+}
+
+bool getCached(const std::string& key, float& f)
+{
+  return Master::instance()->parameters()->getCached(key, f);
+}
+
+bool getCached(const std::string& key, int& i)
+{
+  return Master::instance()->parameters()->getCached(key, i);
+}
+
+bool getCached(const std::string& key, bool& b)
+{
+  return Master::instance()->parameters()->getCached(key, b);
+}
+
+bool getCached(const std::string& key, XmlRpc::XmlRpcValue& v)
+{
+  return Master::instance()->parameters()->getCached(key, v);
+}
+
+bool get(const std::string& key, std::vector<std::string>& vec)
+{
+  return Master::instance()->parameters()->get(key, vec);
+}
+bool get(const std::string& key, std::vector<double>& vec)
+{
+  return Master::instance()->parameters()->get(key, vec);
+}
+bool get(const std::string& key, std::vector<float>& vec)
+{
+  return Master::instance()->parameters()->get(key, vec);
+}
+bool get(const std::string& key, std::vector<int>& vec)
+{
+  return Master::instance()->parameters()->get(key, vec);
+}
+bool get(const std::string& key, std::vector<bool>& vec)
+{
+  return Master::instance()->parameters()->get(key, vec);
+}
+
+bool getCached(const std::string& key, std::vector<std::string>& vec)
+{
+  return Master::instance()->parameters()->getCached(key, vec);
+}
+bool getCached(const std::string& key, std::vector<double>& vec)
+{
+  return Master::instance()->parameters()->getCached(key, vec);
+}
+bool getCached(const std::string& key, std::vector<float>& vec)
+{
+  return Master::instance()->parameters()->getCached(key, vec);
+}
+bool getCached(const std::string& key, std::vector<int>& vec)
+{
+  return Master::instance()->parameters()->getCached(key, vec);
+}
+bool getCached(const std::string& key, std::vector<bool>& vec)
+{
+  return Master::instance()->parameters()->getCached(key, vec);
+}
+
+bool get(const std::string& key, std::map<std::string, std::string>& map)
+{
+  return Master::instance()->parameters()->getCached(key, map);
+}
+bool get(const std::string& key, std::map<std::string, double>& map)
+{
+  return Master::instance()->parameters()->getCached(key, map);
+}
+bool get(const std::string& key, std::map<std::string, float>& map)
+{
+  return Master::instance()->parameters()->getCached(key, map);
+}
+bool get(const std::string& key, std::map<std::string, int>& map)
+{
+  return Master::instance()->parameters()->getCached(key, map);
+}
+bool get(const std::string& key, std::map<std::string, bool>& map)
+{
+  return Master::instance()->parameters()->getCached(key, map);
+}
+
+bool getCached(const std::string& key, std::map<std::string, std::string>& map)
+{
+  return Master::instance()->parameters()->getCached(key, map);
+}
+bool getCached(const std::string& key, std::map<std::string, double>& map)
+{
+  return Master::instance()->parameters()->getCached(key, map);
+}
+bool getCached(const std::string& key, std::map<std::string, float>& map)
+{
+  return Master::instance()->parameters()->getCached(key, map);
+}
+bool getCached(const std::string& key, std::map<std::string, int>& map)
+{
+  return Master::instance()->parameters()->getCached(key, map);
+}
+bool getCached(const std::string& key, std::map<std::string, bool>& map)
+{
+  return Master::instance()->parameters()->getCached(key, map);
+}
+
+
+bool search(const std::string& key, std::string& result_out)
+{
+  return Master::instance()->parameters()->search(key, result_out);
+}
+
+bool search(const std::string& ns, const std::string& key, std::string& result_out)
+{
+  return Master::instance()->parameters()->search(ns, key, result_out);
+}
+
+void update(const std::string& key, const XmlRpc::XmlRpcValue& v)
+{
+  Master::instance()->parameters()->update(key, v);
+}
+
+void init(const M_string& remappings)
+{
+  Master::instance()->parameters()->init(remappings);
 }
 
 } // namespace param

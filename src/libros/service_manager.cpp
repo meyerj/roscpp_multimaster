@@ -52,24 +52,9 @@ using namespace std; // sigh
 namespace ros
 {
 
-ServiceManagerPtr g_service_manager;
-boost::mutex g_service_manager_mutex;
-const ServiceManagerPtr& ServiceManager::instance()
-{
-  if (!g_service_manager)
-  {
-    boost::mutex::scoped_lock lock(g_service_manager_mutex);
-    if (!g_service_manager)
-    {
-      g_service_manager.reset(new ServiceManager);
-    }
-  }
-
-  return g_service_manager;
-}
-
-ServiceManager::ServiceManager()
-: shutting_down_(false)
+ServiceManager::ServiceManager(const MasterPtr& master)
+: master_(master)
+, shutting_down_(false)
 {
 }
 
@@ -83,9 +68,8 @@ void ServiceManager::start()
   shutting_down_ = false;
 
   poll_manager_ = PollManager::instance();
-  connection_manager_ = ConnectionManager::instance();
-  xmlrpc_manager_ = XMLRPCManager::instance();
-
+  connection_manager_ = master_.lock()->connectionManager();
+  xmlrpc_manager_ = master_.lock()->xmlRpcManager();
 }
 
 void ServiceManager::shutdown()
@@ -272,7 +256,7 @@ ServiceServerLinkPtr ServiceManager::createServiceServerLink(const std::string& 
 
   if (transport->connect(serv_host, serv_port))
   {
-    ServiceServerLinkPtr client(new ServiceServerLink(service, persistent, request_md5sum, response_md5sum, header_values));
+    ServiceServerLinkPtr client(new ServiceServerLink(shared_from_this(), service, persistent, request_md5sum, response_md5sum, header_values));
 
     {
       boost::mutex::scoped_lock lock(service_server_links_mutex_);

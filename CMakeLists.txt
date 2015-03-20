@@ -20,19 +20,19 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/common.h.in $
 
 find_package(Boost REQUIRED COMPONENTS signals filesystem system)
 
-include_directories(include ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION} ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+include_directories(include ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_INCLUDE_DESTINATION} ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
-add_message_files(
-  DIRECTORY msg
-  FILES Logger.msg
-)
+#add_message_files(
+#  DIRECTORY msg
+#  FILES Logger.msg
+#)
 
-add_service_files(
-  DIRECTORY srv
-  FILES Empty.srv GetLoggers.srv SetLoggerLevel.srv
-)
+#add_service_files(
+#  DIRECTORY srv
+#  FILES Empty.srv GetLoggers.srv SetLoggerLevel.srv
+#)
 
-generate_messages()
+#generate_messages()
 
 set(PTHREAD_LIB "")
 find_package(Threads)

@@ -68,6 +68,23 @@ public:
   boost::mutex mutex_;
 };
 
+NodeHandle::NodeHandle(const MasterPtr& master, const std::string& ns, const M_string& remappings)
+  : namespace_(this_node::getNamespace())
+  , master_(master)
+  , callback_queue_(0)
+  , collection_(0)
+{
+  std::string tilde_resolved_ns;
+  if (!ns.empty() && ns[0] == '~')// starts with tilde
+    tilde_resolved_ns = names::resolve(ns);
+  else
+    tilde_resolved_ns = ns;
+
+  construct(tilde_resolved_ns, true);
+
+  initRemappings(remappings);
+}
+
 NodeHandle::NodeHandle(const std::string& ns, const M_string& remappings)
   : namespace_(this_node::getNamespace())
   , callback_queue_(0)
@@ -298,7 +315,7 @@ Publisher NodeHandle::advertise(AdvertiseOptions& ops)
   SubscriberCallbacksPtr callbacks(new SubscriberCallbacks(ops.connect_cb, ops.disconnect_cb, 
 							   ops.tracked_object, ops.callback_queue));
 
-  if (TopicManager::instance()->advertise(ops, callbacks))
+  if (master()->topicManager()->advertise(ops, callbacks))
   {
     Publisher pub(ops.topic, ops.md5sum, ops.datatype, *this, callbacks);
 
@@ -328,7 +345,7 @@ Subscriber NodeHandle::subscribe(SubscribeOptions& ops)
     }
   }
 
-  if (TopicManager::instance()->subscribe(ops))
+  if (master()->topicManager()->subscribe(ops))
   {
     Subscriber sub(ops.topic, *this, ops.helper);
 
@@ -358,7 +375,7 @@ ServiceServer NodeHandle::advertiseService(AdvertiseServiceOptions& ops)
     }
   }
 
-  if (ServiceManager::instance()->advertiseService(ops))
+  if (master()->serviceManager()->advertiseService(ops))
   {
     ServiceServer srv(ops.service, *this);
 
@@ -512,219 +529,219 @@ void NodeHandle::shutdown()
 
 void NodeHandle::setParam(const std::string& key, const XmlRpc::XmlRpcValue& v) const
 {
-  return param::set(resolveName(key), v);
+  return master()->parameters()->set(resolveName(key), v);
 }
 
 void NodeHandle::setParam(const std::string& key, const std::string& s) const
 {
-  return param::set(resolveName(key), s);
+  return master()->parameters()->set(resolveName(key), s);
 }
 
 void NodeHandle::setParam(const std::string& key, const char* s) const
 {
-  return param::set(resolveName(key), s);
+  return master()->parameters()->set(resolveName(key), s);
 }
 
 void NodeHandle::setParam(const std::string& key, double d) const
 {
-  return param::set(resolveName(key), d);
+  return master()->parameters()->set(resolveName(key), d);
 }
 
 void NodeHandle::setParam(const std::string& key, int i) const
 {
-  return param::set(resolveName(key), i);
+  return master()->parameters()->set(resolveName(key), i);
 }
 
 void NodeHandle::setParam(const std::string& key, bool b) const
 {
-  return param::set(resolveName(key), b);
+  return master()->parameters()->set(resolveName(key), b);
 }
 
 void NodeHandle::setParam(const std::string& key, const std::vector<std::string>& vec) const
 {
-  return param::set(resolveName(key), vec);
+  return master()->parameters()->set(resolveName(key), vec);
 }
 void NodeHandle::setParam(const std::string& key, const std::vector<double>& vec) const
 {
-  return param::set(resolveName(key), vec);
+  return master()->parameters()->set(resolveName(key), vec);
 }
 void NodeHandle::setParam(const std::string& key, const std::vector<float>& vec) const
 {
-  return param::set(resolveName(key), vec);
+  return master()->parameters()->set(resolveName(key), vec);
 }
 void NodeHandle::setParam(const std::string& key, const std::vector<int>& vec) const
 {
-  return param::set(resolveName(key), vec);
+  return master()->parameters()->set(resolveName(key), vec);
 }
 void NodeHandle::setParam(const std::string& key, const std::vector<bool>& vec) const
 {
-  return param::set(resolveName(key), vec);
+  return master()->parameters()->set(resolveName(key), vec);
 }
 
 void NodeHandle::setParam(const std::string& key, const std::map<std::string, std::string>& map) const
 {
-  return param::set(resolveName(key), map);
+  return master()->parameters()->set(resolveName(key), map);
 }
 void NodeHandle::setParam(const std::string& key, const std::map<std::string, double>& map) const
 {
-  return param::set(resolveName(key), map);
+  return master()->parameters()->set(resolveName(key), map);
 }
 void NodeHandle::setParam(const std::string& key, const std::map<std::string, float>& map) const
 {
-  return param::set(resolveName(key), map);
+  return master()->parameters()->set(resolveName(key), map);
 }
 void NodeHandle::setParam(const std::string& key, const std::map<std::string, int>& map) const
 {
-  return param::set(resolveName(key), map);
+  return master()->parameters()->set(resolveName(key), map);
 }
 void NodeHandle::setParam(const std::string& key, const std::map<std::string, bool>& map) const
 {
-  return param::set(resolveName(key), map);
+  return master()->parameters()->set(resolveName(key), map);
 }
 
 bool NodeHandle::hasParam(const std::string& key) const
 {
-  return param::has(resolveName(key));
+  return master()->parameters()->has(resolveName(key));
 }
 
 bool NodeHandle::deleteParam(const std::string& key) const
 {
-  return param::del(resolveName(key));
+  return master()->parameters()->del(resolveName(key));
 }
 
 bool NodeHandle::getParam(const std::string& key, XmlRpc::XmlRpcValue& v) const
 {
-  return param::get(resolveName(key), v);
+  return master()->parameters()->get(resolveName(key), v);
 }
 
 bool NodeHandle::getParam(const std::string& key, std::string& s) const
 {
-  return param::get(resolveName(key), s);
+  return master()->parameters()->get(resolveName(key), s);
 }
 
 bool NodeHandle::getParam(const std::string& key, double& d) const
 {
-  return param::get(resolveName(key), d);
+  return master()->parameters()->get(resolveName(key), d);
 }
 
 bool NodeHandle::getParam(const std::string& key, int& i) const
 {
-  return param::get(resolveName(key), i);
+  return master()->parameters()->get(resolveName(key), i);
 }
 
 bool NodeHandle::getParam(const std::string& key, bool& b) const
 {
-  return param::get(resolveName(key), b);
+  return master()->parameters()->get(resolveName(key), b);
 }
 
 
 bool NodeHandle::getParam(const std::string& key, std::vector<std::string>& vec) const
 {
-  return param::get(resolveName(key), vec);
+  return master()->parameters()->get(resolveName(key), vec);
 }
 bool NodeHandle::getParam(const std::string& key, std::vector<double>& vec) const
 {
-  return param::get(resolveName(key), vec);
+  return master()->parameters()->get(resolveName(key), vec);
 }
 bool NodeHandle::getParam(const std::string& key, std::vector<float>& vec) const
 {
-  return param::get(resolveName(key), vec);
+  return master()->parameters()->get(resolveName(key), vec);
 }
 bool NodeHandle::getParam(const std::string& key, std::vector<int>& vec) const
 {
-  return param::get(resolveName(key), vec);
+  return master()->parameters()->get(resolveName(key), vec);
 }
 bool NodeHandle::getParam(const std::string& key, std::vector<bool>& vec) const
 {
-  return param::get(resolveName(key), vec);
+  return master()->parameters()->get(resolveName(key), vec);
 }
 
 bool NodeHandle::getParam(const std::string& key, std::map<std::string, std::string>& map) const
 {
-  return param::get(resolveName(key), map);
+  return master()->parameters()->get(resolveName(key), map);
 }
 bool NodeHandle::getParam(const std::string& key, std::map<std::string, double>& map) const
 {
-  return param::get(resolveName(key), map);
+  return master()->parameters()->get(resolveName(key), map);
 }
 bool NodeHandle::getParam(const std::string& key, std::map<std::string, float>& map) const
 {
-  return param::get(resolveName(key), map);
+  return master()->parameters()->get(resolveName(key), map);
 }
 bool NodeHandle::getParam(const std::string& key, std::map<std::string, int>& map) const
 {
-  return param::get(resolveName(key), map);
+  return master()->parameters()->get(resolveName(key), map);
 }
 bool NodeHandle::getParam(const std::string& key, std::map<std::string, bool>& map) const
 {
-  return param::get(resolveName(key), map);
+  return master()->parameters()->get(resolveName(key), map);
 }
 
 bool NodeHandle::getParamCached(const std::string& key, XmlRpc::XmlRpcValue& v) const
 {
-  return param::getCached(resolveName(key), v);
+  return master()->parameters()->getCached(resolveName(key), v);
 }
 
 bool NodeHandle::getParamCached(const std::string& key, std::string& s) const
 {
-  return param::getCached(resolveName(key), s);
+  return master()->parameters()->getCached(resolveName(key), s);
 }
 
 bool NodeHandle::getParamCached(const std::string& key, double& d) const
 {
-  return param::getCached(resolveName(key), d);
+  return master()->parameters()->getCached(resolveName(key), d);
 }
 
 bool NodeHandle::getParamCached(const std::string& key, int& i) const
 {
-  return param::getCached(resolveName(key), i);
+  return master()->parameters()->getCached(resolveName(key), i);
 }
 
 bool NodeHandle::getParamCached(const std::string& key, bool& b) const
 {
-  return param::getCached(resolveName(key), b);
+  return master()->parameters()->getCached(resolveName(key), b);
 }
 
 bool NodeHandle::getParamCached(const std::string& key, std::vector<std::string>& vec) const
 {
-  return param::getCached(resolveName(key), vec);
+  return master()->parameters()->getCached(resolveName(key), vec);
 }
 bool NodeHandle::getParamCached(const std::string& key, std::vector<double>& vec) const
 {
-  return param::getCached(resolveName(key), vec);
+  return master()->parameters()->getCached(resolveName(key), vec);
 }
 bool NodeHandle::getParamCached(const std::string& key, std::vector<float>& vec) const
 {
-  return param::getCached(resolveName(key), vec);
+  return master()->parameters()->getCached(resolveName(key), vec);
 }
 bool NodeHandle::getParamCached(const std::string& key, std::vector<int>& vec) const
 {
-  return param::getCached(resolveName(key), vec);
+  return master()->parameters()->getCached(resolveName(key), vec);
 }
 bool NodeHandle::getParamCached(const std::string& key, std::vector<bool>& vec) const
 {
-  return param::getCached(resolveName(key), vec);
+  return master()->parameters()->getCached(resolveName(key), vec);
 }
 
 bool NodeHandle::getParamCached(const std::string& key, std::map<std::string, std::string>& map) const
 {
-  return param::getCached(resolveName(key), map);
+  return master()->parameters()->getCached(resolveName(key), map);
 }
 bool NodeHandle::getParamCached(const std::string& key, std::map<std::string, double>& map) const
 {
-  return param::getCached(resolveName(key), map);
+  return master()->parameters()->getCached(resolveName(key), map);
 }
 bool NodeHandle::getParamCached(const std::string& key, std::map<std::string, float>& map) const
 {
-  return param::getCached(resolveName(key), map);
+  return master()->parameters()->getCached(resolveName(key), map);
 }
 bool NodeHandle::getParamCached(const std::string& key, std::map<std::string, int>& map) const
 {
-  return param::getCached(resolveName(key), map);
+  return master()->parameters()->getCached(resolveName(key), map);
 }
 bool NodeHandle::getParamCached(const std::string& key, std::map<std::string, bool>& map) const
 {
-  return param::getCached(resolveName(key), map);
+  return master()->parameters()->getCached(resolveName(key), map);
 }
 
 bool NodeHandle::searchParam(const std::string& key, std::string& result_out) const
@@ -740,12 +757,17 @@ bool NodeHandle::searchParam(const std::string& key, std::string& result_out) co
     remapped = it->second;
   }
 
-  return param::search(resolveName(""), remapped, result_out);
+  return master()->parameters()->search(resolveName(""), remapped, result_out);
 }
 
 bool NodeHandle::ok() const
 {
   return ros::ok() && ok_;
+}
+
+const MasterPtr& NodeHandle::master() const
+{
+  return master_ ? master_ : Master::instance();
 }
 
 } // namespace ros

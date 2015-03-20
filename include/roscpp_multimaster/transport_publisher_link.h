@@ -51,7 +51,7 @@ class WallTimerEvent;
 class ROSCPP_DECL TransportPublisherLink : public PublisherLink
 {
 public:
-  TransportPublisherLink(const SubscriptionPtr& parent, const std::string& xmlrpc_uri, const TransportHints& transport_hints);
+  TransportPublisherLink(const ConnectionManagerPtr& connection_manager, const SubscriptionPtr& parent, const std::string& xmlrpc_uri, const TransportHints& transport_hints);
   virtual ~TransportPublisherLink();
 
   //
@@ -78,6 +78,7 @@ private:
 
   void onRetryTimer(const ros::WallTimerEvent&);
 
+  ConnectionManagerWPtr connection_manager_;
   ConnectionPtr connection_;
 
   int32_t retry_timer_handle_;

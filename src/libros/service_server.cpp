@@ -28,6 +28,7 @@
 #include "roscpp_multimaster/service_server.h"
 #include "roscpp_multimaster/node_handle.h"
 #include "roscpp_multimaster/service_manager.h"
+#include "roscpp_multimaster/master.h"
 
 namespace ros
 {
@@ -50,7 +51,7 @@ void ServiceServer::Impl::unadvertise()
   if (!unadvertised_)
   {
     unadvertised_ = true;
-    ServiceManager::instance()->unadvertiseService(service_);
+    node_handle_->master()->serviceManager()->unadvertiseService(service_);
     node_handle_.reset();
   }
 }

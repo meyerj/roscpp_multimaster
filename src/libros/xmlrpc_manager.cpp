@@ -94,22 +94,6 @@ void getPid(const XmlRpcValue& params, XmlRpcValue& result)
 
 const ros::WallDuration CachedXmlRpcClient::s_zombie_time_(30.0); // reap after 30 seconds
 
-XMLRPCManagerPtr g_xmlrpc_manager;
-boost::mutex g_xmlrpc_manager_mutex;
-const XMLRPCManagerPtr& XMLRPCManager::instance()
-{
-  if (!g_xmlrpc_manager)
-  {
-    boost::mutex::scoped_lock lock(g_xmlrpc_manager_mutex);
-    if (!g_xmlrpc_manager)
-    {
-      g_xmlrpc_manager.reset(new XMLRPCManager);
-    }
-  }
-
-  return g_xmlrpc_manager;
-}
-
 XMLRPCManager::XMLRPCManager()
 : port_(0)
 , shutting_down_(false)

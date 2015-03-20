@@ -47,9 +47,10 @@
 namespace ros
 {
 
-ServiceServerLink::ServiceServerLink(const std::string& service_name, bool persistent, const std::string& request_md5sum,
+ServiceServerLink::ServiceServerLink(const ServiceManagerPtr& service_manager, const std::string& service_name, bool persistent, const std::string& request_md5sum,
                              const std::string& response_md5sum, const M_string& header_values)
-: service_name_(service_name)
+: service_manager_(service_manager)
+, service_name_(service_name)
 , persistent_(persistent)
 , request_md5sum_(request_md5sum)
 , response_md5sum_(response_md5sum)
@@ -172,7 +173,7 @@ void ServiceServerLink::onConnectionDropped(const ConnectionPtr& conn)
   dropped_ = true;
   clearCalls();
 
-  ServiceManager::instance()->removeServiceServerLink(shared_from_this());
+  service_manager_.lock()->removeServiceServerLink(shared_from_this());
 }
 
 void ServiceServerLink::onRequestWritten(const ConnectionPtr& conn)

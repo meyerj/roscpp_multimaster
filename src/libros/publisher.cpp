@@ -29,6 +29,7 @@
 #include "roscpp_multimaster/publication.h"
 #include "roscpp_multimaster/node_handle.h"
 #include "roscpp_multimaster/topic_manager.h"
+#include "roscpp_multimaster/master.h"
 
 namespace ros
 {
@@ -51,7 +52,7 @@ void Publisher::Impl::unadvertise()
   if (!unadvertised_)
   {
     unadvertised_ = true;
-    TopicManager::instance()->unadvertise(topic_, callbacks_);
+    node_handle_->master()->topicManager()->unadvertise(topic_, callbacks_);
     node_handle_.reset();
   }
 }
@@ -89,14 +90,14 @@ void Publisher::publish(const boost::function<SerializedMessage(void)>& serfunc,
     return;
   }
 
-  TopicManager::instance()->publish(impl_->topic_, serfunc, m);
+  impl_->node_handle_->master()->topicManager()->publish(impl_->topic_, serfunc, m);
 }
 
 void Publisher::incrementSequence() const
 {
   if (impl_ && impl_->isValid())
   {
-    TopicManager::instance()->incrementSequence(impl_->topic_);
+    impl_->node_handle_->master()->topicManager()->incrementSequence(impl_->topic_);
   }
 }
 
@@ -123,7 +124,7 @@ uint32_t Publisher::getNumSubscribers() const
 {
   if (impl_ && impl_->isValid())
   {
-    return TopicManager::instance()->getNumSubscribers(impl_->topic_);
+    return impl_->node_handle_->master()->topicManager()->getNumSubscribers(impl_->topic_);
   }
 
   return 0;
@@ -133,7 +134,7 @@ bool Publisher::isLatched() const {
   PublicationPtr publication_ptr;
   if (impl_ && impl_->isValid()) {
     publication_ptr =
-      TopicManager::instance()->lookupPublication(impl_->topic_);
+      impl_->node_handle_->master()->topicManager()->lookupPublication(impl_->topic_);
   } else {
     ROS_ASSERT_MSG(false, "Call to isLatched() on an invalid Publisher");
     throw ros::Exception("Call to isLatched() on an invalid Publisher");

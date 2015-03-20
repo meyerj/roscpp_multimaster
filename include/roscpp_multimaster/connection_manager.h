@@ -44,14 +44,12 @@ typedef boost::shared_ptr<ConnectionManager> ConnectionManagerPtr;
 class ROSCPP_DECL ConnectionManager
 {
 public:
-  static const ConnectionManagerPtr& instance();
-
-  ConnectionManager();
+  ConnectionManager(const MasterPtr& master);
   ~ConnectionManager();
 
   /** @brief Get a new connection ID
    */
-  uint32_t getNewConnectionID();
+  static uint32_t getNewConnectionID();
 
   /** @brief Add a connection to be tracked by the node.  Will automatically remove them if they've been dropped, but from inside the ros thread
    *
@@ -82,6 +80,7 @@ private:
   bool onConnectionHeaderReceived(const ConnectionPtr& conn, const Header& header);
   void tcprosAcceptConnection(const TransportTCPPtr& transport);
 
+  MasterWPtr master_;
   PollManagerPtr poll_manager_;
 
   S_Connection connections_;
@@ -91,8 +90,8 @@ private:
 
   // The connection ID counter, used to assign unique ID to each inbound or
   // outbound connection.  Access via getNewConnectionID()
-  uint32_t connection_id_counter_;
-  boost::mutex connection_id_counter_mutex_;
+  static uint32_t s_connection_id_counter;
+  static boost::mutex s_connection_id_counter_mutex;
 
   boost::signals2::connection poll_conn_;
 

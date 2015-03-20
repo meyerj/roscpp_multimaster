@@ -78,7 +78,7 @@ private:
 
 public:
   typedef std::map<std::string, std::string> M_string;
-  ServiceServerLink(const std::string& service_name, bool persistent, const std::string& request_md5sum, const std::string& response_md5sum, const M_string& header_values);
+  ServiceServerLink(const ServiceManagerPtr& service_manager, const std::string& service_name, bool persistent, const std::string& request_md5sum, const std::string& response_md5sum, const M_string& header_values);
   virtual ~ServiceServerLink();
 
   //
@@ -134,6 +134,8 @@ private:
   void onRequestWritten(const ConnectionPtr& conn);
   void onResponseOkAndLength(const ConnectionPtr& conn, const boost::shared_array<uint8_t>& buffer, uint32_t size, bool success);
   void onResponse(const ConnectionPtr& conn, const boost::shared_array<uint8_t>& buffer, uint32_t size, bool success);
+
+  ServiceManagerWPtr service_manager_;
 
   ConnectionPtr connection_;
   std::string service_name_;

@@ -57,7 +57,7 @@ IntraProcessSubscriberLink::~IntraProcessSubscriberLink()
 void IntraProcessSubscriberLink::setSubscriber(const IntraProcessPublisherLinkPtr& subscriber)
 {
   subscriber_ = subscriber;
-  connection_id_ = ConnectionManager::instance()->getNewConnectionID();
+  connection_id_ = ConnectionManager::getNewConnectionID();
   destination_caller_id_ = this_node::getName();
 }
 

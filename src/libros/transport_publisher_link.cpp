@@ -55,8 +55,9 @@
 namespace ros
 {
 
-TransportPublisherLink::TransportPublisherLink(const SubscriptionPtr& parent, const std::string& xmlrpc_uri, const TransportHints& transport_hints)
+TransportPublisherLink::TransportPublisherLink(const ConnectionManagerPtr& connection_manager, const SubscriptionPtr& parent, const std::string& xmlrpc_uri, const TransportHints& transport_hints)
 : PublisherLink(parent, xmlrpc_uri, transport_hints)
+, connection_manager_(connection_manager)
 , retry_timer_handle_(-1)
 , needs_retry_(false)
 , dropping_(false)
@@ -224,7 +225,7 @@ void TransportPublisherLink::onRetryTimer(const ros::WallTimerEvent&)
         connection->initialize(transport, false, HeaderReceivedFunc());
         initialize(connection);
 
-        ConnectionManager::instance()->addConnection(connection);
+        connection_manager_.lock()->addConnection(connection);
       }
       else
       {

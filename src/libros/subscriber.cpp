@@ -28,6 +28,7 @@
 #include "roscpp_multimaster/subscriber.h"
 #include "roscpp_multimaster/node_handle.h"
 #include "roscpp_multimaster/topic_manager.h"
+#include "roscpp_multimaster/master.h"
 
 namespace ros
 {
@@ -52,7 +53,7 @@ namespace ros
     if (!unsubscribed_)
       {
 	unsubscribed_ = true;
-	TopicManager::instance()->unsubscribe(topic_, helper_);
+  node_handle_->master()->topicManager()->unsubscribe(topic_, helper_);
 	node_handle_.reset();
 	helper_.reset();
       }
@@ -98,7 +99,7 @@ namespace ros
   {
     if (impl_ && impl_->isValid())
       {
-	return TopicManager::instance()->getNumPublishers(impl_->topic_);
+return impl_->node_handle_->master()->topicManager()->getNumPublishers(impl_->topic_);
       }
 
     return 0;

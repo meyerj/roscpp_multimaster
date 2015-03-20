@@ -38,6 +38,8 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 
+#include <boost/enable_shared_from_this.hpp>
+
 namespace ros
 {
 
@@ -60,12 +62,10 @@ typedef boost::shared_ptr<ConnectionManager> ConnectionManagerPtr;
 class SubscriptionCallbackHelper;
 typedef boost::shared_ptr<SubscriptionCallbackHelper> SubscriptionCallbackHelperPtr;
 
-class ROSCPP_DECL TopicManager
+class ROSCPP_DECL TopicManager : public boost::enable_shared_from_this<TopicManager>
 {
 public:
-  static const TopicManagerPtr& instance();
-
-  TopicManager();
+  TopicManager(const MasterPtr& master);
   ~TopicManager();
 
   void start();
@@ -217,6 +217,8 @@ private:
   void getPublicationsCallback(XmlRpc::XmlRpcValue& params, XmlRpc::XmlRpcValue& result);
 
   bool isShuttingDown() { return shutting_down_; }
+
+  MasterWPtr master_;
 
   boost::mutex subs_mutex_;
   L_Subscription subscriptions_;
