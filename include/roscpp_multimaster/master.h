@@ -133,13 +133,17 @@ class ROSCPP_DECL Master : public boost::enable_shared_from_this<Master> {
 public:
   static const MasterPtr& instance(const std::string &uri = std::string());
 
-  Master(const std::string &uri = std::string());
+  Master(const std::string &uri = std::string(), const M_string& remappings = M_string());
   ~Master();
 
   void init(const M_string& remappings);
 
+  bool isStarted() const;
   void start();
   void shutdown();
+
+  void startNodeHandle();
+  void shutdownNodeHandle();
 
   /** @brief Execute an XMLRPC call on the master
    *
@@ -212,6 +216,8 @@ public:
   const ConnectionManagerPtr& connectionManager();
   const XMLRPCManagerPtr& xmlRpcManager();
 
+  std::string getCallerId();
+
 private:
   uint32_t port_;
   std::string host_;
@@ -228,6 +234,13 @@ private:
   XMLRPCManagerPtr xmlrpc_manager_;
   boost::mutex parameters_mutex_;
   ParametersPtr parameters_;
+
+  boost::mutex start_mutex_;
+  bool started_;
+
+  boost::mutex nh_refcount_mutex_;
+  int32_t nh_refcount_;
+  bool node_started_by_nh_;
 
 #if defined(__APPLE__)
   boost::mutex xmlrpc_call_mutex_;

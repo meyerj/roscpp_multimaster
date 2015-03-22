@@ -40,6 +40,7 @@
 #include <ros/assert.h>
 
 #include "XmlRpc.h"
+#include <boost/lexical_cast.hpp>
 
 namespace ros
 {
@@ -65,14 +66,14 @@ const MasterPtr& Master::instance(const std::string &uri)
   return g_master[uri];
 }
 
-Master::Master(const std::string& uri)
+Master::Master(const std::string& uri, const M_string& remappings)
   : port_(0)
   , uri_(uri)
+  , nh_refcount_(0)
+  , started_(false)
+  , node_started_by_nh_(false)
 {
-  if (!uri_.empty()) {
-    init(M_string());
-    start();
-  }
+  init(remappings);
 }
 
 Master::~Master()
@@ -124,8 +125,51 @@ void Master::init(const M_string& remappings)
   }
 }
 
+void Master::startNodeHandle()
+{
+  boost::mutex::scoped_lock lock(nh_refcount_mutex_);
+
+  if (nh_refcount_ == 0 && !isStarted())
+  {
+    node_started_by_nh_ = true;
+    start();
+  }
+
+  ++nh_refcount_;
+}
+
+void Master::shutdownNodeHandle()
+{
+  boost::mutex::scoped_lock lock(nh_refcount_mutex_);
+
+  --nh_refcount_;
+
+  if (nh_refcount_ == 0 && node_started_by_nh_)
+  {
+    shutdown();
+  }
+
+}
+
+bool Master::isStarted() const
+{
+  return started_;
+}
+
 void Master::start()
 {
+  boost::mutex::scoped_lock lock(start_mutex_);
+  if (started_)
+  {
+    return;
+  }
+  started_ = true;
+
+  if (!ros::isStarted())
+  {
+    ros::start();
+  }
+
   topicManager()->start();
   serviceManager()->start();
   connectionManager()->start();
@@ -135,6 +179,13 @@ void Master::start()
 
 void Master::shutdown()
 {
+  boost::mutex::scoped_lock lock(start_mutex_);
+  if (!started_)
+  {
+    return;
+  }
+  started_ = false;
+
   topicManager()->shutdown();
   serviceManager()->shutdown();
 //  PollManager::instance()->shutdown();
@@ -170,14 +221,14 @@ void Master::setRetryTimeout(ros::WallDuration timeout)
 bool Master::check()
 {
   XmlRpc::XmlRpcValue args, result, payload;
-  args[0] = this_node::getName();
+  args[0] = getCallerId();
   return execute("getPid", args, result, payload, false);
 }
 
 bool Master::getTopics(master::V_TopicInfo& topics)
 {
   XmlRpc::XmlRpcValue args, result, payload;
-  args[0] = this_node::getName();
+  args[0] = getCallerId();
   args[1] = ""; //TODO: Fix this
 
   if (!execute("getPublishedTopics", args, result, payload, true))
@@ -197,7 +248,7 @@ bool Master::getTopics(master::V_TopicInfo& topics)
 bool Master::getNodes(V_string& nodes)
 {
   XmlRpc::XmlRpcValue args, result, payload;
-  args[0] = this_node::getName();
+  args[0] = getCallerId();
 
   if (!execute("getSystemState", args, result, payload, true))
   {
@@ -363,6 +414,15 @@ const XMLRPCManagerPtr& Master::xmlRpcManager()
   }
 
   return xmlrpc_manager_;
+}
+
+std::string Master::getCallerId()
+{
+  std::string caller_id = this_node::getName();
+  if (uri_ != "http://localhost:11311") {
+    caller_id += "_" + network::getHost() + "_" + boost::lexical_cast<std::string>(xmlRpcManager()->getServerPort());
+  }
+  return caller_id;
 }
 
 namespace master

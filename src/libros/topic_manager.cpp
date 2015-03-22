@@ -381,7 +381,7 @@ bool TopicManager::advertise(const AdvertiseOptions& ops, const SubscriberCallba
   }
 
   XmlRpcValue args, result, payload;
-  args[0] = this_node::getName();
+  args[0] = master_.lock()->getCallerId();
   args[1] = ops.topic;
   args[2] = ops.datatype;
   args[3] = xmlrpc_manager_->getServerURI();
@@ -442,7 +442,7 @@ bool TopicManager::unadvertise(const std::string &topic, const SubscriberCallbac
 bool TopicManager::unregisterPublisher(const std::string& topic)
 {
   XmlRpcValue args, result, payload;
-  args[0] = this_node::getName();
+  args[0] = master_.lock()->getCallerId();
   args[1] = topic;
   args[2] = xmlrpc_manager_->getServerURI();
   master_.lock()->execute("unregisterPublisher", args, result, payload, false);
@@ -466,7 +466,7 @@ bool TopicManager::isTopicAdvertised(const string &topic)
 bool TopicManager::registerSubscriber(const SubscriptionPtr& s, const string &datatype)
 {
   XmlRpcValue args, result, payload;
-  args[0] = this_node::getName();
+  args[0] = master_.lock()->getCallerId();
   args[1] = s->getName();
   args[2] = datatype;
   args[3] = xmlrpc_manager_->getServerURI();
@@ -529,7 +529,7 @@ bool TopicManager::registerSubscriber(const SubscriptionPtr& s, const string &da
 bool TopicManager::unregisterSubscriber(const string &topic)
 {
   XmlRpcValue args, result, payload;
-  args[0] = this_node::getName();
+  args[0] = master_.lock()->getCallerId();
   args[1] = topic;
   args[2] = xmlrpc_manager_->getServerURI();
 
@@ -662,7 +662,7 @@ bool TopicManager::requestTopic(const string &topic,
       m["topic"] = topic;
       m["md5sum"] = pub_ptr->getMD5Sum();
       m["type"] = pub_ptr->getDataType();
-      m["callerid"] = this_node::getName();
+      m["callerid"] = master_.lock()->getCallerId();
       m["message_definition"] = pub_ptr->getMessageDefinition();
       boost::shared_array<uint8_t> msg_def_buffer;
       uint32_t len;

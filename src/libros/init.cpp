@@ -450,9 +450,9 @@ void init(const M_string& remappings, const std::string& name, uint32_t options)
     signal(SIGPIPE, SIG_IGN);
 #endif
     network::init(remappings);
-    master::init(remappings);
     // names:: namespace is initialized by this_node
     this_node::init(name, remappings, options);
+    master::init(remappings);
     file_log::init(remappings);
     param::init(remappings);
 

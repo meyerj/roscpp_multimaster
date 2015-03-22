@@ -48,7 +48,7 @@ if(CMAKE_THREAD_LIBS_INIT)
 endif()
 
 catkin_package(
-  INCLUDE_DIRS include #${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  INCLUDE_DIRS include ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_INCLUDE_DESTINATION}
   LIBRARIES ${PROJECT_NAME} ${PTHREAD_LIB}
   CATKIN_DEPENDS cpp_common message_runtime rosconsole roscpp_serialization roscpp_traits rosgraph_msgs rostime std_msgs xmlrpcpp
   DEPENDS Boost

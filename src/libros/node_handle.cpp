@@ -49,10 +49,6 @@
 namespace ros
 {
 
-boost::mutex g_nh_refcount_mutex;
-int32_t g_nh_refcount = 0;
-bool g_node_started_by_nh = false;
-
 class NodeHandleBackingCollection
 {
 public:
@@ -106,9 +102,9 @@ NodeHandle::NodeHandle(const NodeHandle& parent, const std::string& ns)
 {
   namespace_ = parent.getNamespace();
   callback_queue_ = parent.callback_queue_;
-
   remappings_ = parent.remappings_;
   unresolved_remappings_ = parent.unresolved_remappings_;
+  master_ = parent.master_;
 
   construct(ns, false);
 }
@@ -118,9 +114,9 @@ NodeHandle::NodeHandle(const NodeHandle& parent, const std::string& ns, const M_
 {
   namespace_ = parent.getNamespace();
   callback_queue_ = parent.callback_queue_;
-
   remappings_ = parent.remappings_;
   unresolved_remappings_ = parent.unresolved_remappings_;
+  master_ = parent.master_;
 
   construct(ns, false);
 
@@ -133,6 +129,7 @@ NodeHandle::NodeHandle(const NodeHandle& rhs)
   callback_queue_ = rhs.callback_queue_;
   remappings_ = rhs.remappings_;
   unresolved_remappings_ = rhs.unresolved_remappings_;
+  master_ = rhs.master_;
 
   construct(rhs.namespace_, true); 
 
@@ -181,29 +178,13 @@ void NodeHandle::construct(const std::string& ns, bool validate_name)
     }
   ok_ = true;
 
-  boost::mutex::scoped_lock lock(g_nh_refcount_mutex);
-
-  if (g_nh_refcount == 0 && !ros::isStarted())
-  {
-    g_node_started_by_nh = true;
-    ros::start();
-  }
-
-  ++g_nh_refcount;
+  master()->startNodeHandle();
 }
 
 void NodeHandle::destruct()
 {
   delete collection_;
-
-  boost::mutex::scoped_lock lock(g_nh_refcount_mutex);
-
-  --g_nh_refcount;
-
-  if (g_nh_refcount == 0 && g_node_started_by_nh)
-  {
-    ros::shutdown();
-  }
+  master()->shutdownNodeHandle();
 }
 
 void NodeHandle::initRemappings(const M_string& remappings)

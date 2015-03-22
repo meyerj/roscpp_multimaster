@@ -137,7 +137,7 @@ bool ServiceManager::advertiseService(const AdvertiseServiceOptions& ops)
   }
 
   XmlRpcValue args, result, payload;
-  args[0] = this_node::getName();
+  args[0] = master_.lock()->getCallerId();
   args[1] = ops.service;
   char uri_buf[1024];
   snprintf(uri_buf, sizeof(uri_buf), "rosrpc://%s:%d",
@@ -187,7 +187,7 @@ bool ServiceManager::unadvertiseService(const string &serv_name)
 bool ServiceManager::unregisterService(const std::string& service)
 {
   XmlRpcValue args, result, payload;
-  args[0] = this_node::getName();
+  args[0] = master_.lock()->getCallerId();
   args[1] = service;
   char uri_buf[1024];
   snprintf(uri_buf, sizeof(uri_buf), "rosrpc://%s:%d",
@@ -300,7 +300,7 @@ void ServiceManager::removeServiceServerLink(const ServiceServerLinkPtr& client)
 bool ServiceManager::lookupService(const string &name, string &serv_host, uint32_t &serv_port)
 {
   XmlRpcValue args, result, payload;
-  args[0] = this_node::getName();
+  args[0] = master_.lock()->getCallerId();
   args[1] = name;
   if (!master::execute("lookupService", args, result, payload, false))
     return false;
